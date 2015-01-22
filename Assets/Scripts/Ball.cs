@@ -9,7 +9,7 @@ public class Ball : MonoBehaviour {
 	private float speed = 10;
 	GameObject arrow;
 	TrailRenderer trail;
-	public float playerInfluence;
+	//public float playerInfluence;
 
 	bool isHeld = false;
 
@@ -125,7 +125,7 @@ public class Ball : MonoBehaviour {
 	void MoveBall(){
 
 		if (owner != null) {
-						moveDirection += owner.moveVector * playerInfluence;
+				moveDirection += owner.GetBallControlVector();
 			if (moveDirection.magnitude < .5f){
 				moveDirection = moveDirection.normalized * .5f;
 			}
