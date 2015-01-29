@@ -6,19 +6,21 @@ public class Ball : MonoBehaviour {
 	public Player owner;
 	public Vector3 moveDirection;
 	public bool isNeutral = true;
-	private float speed = 10;
-	GameObject arrow;
-	TrailRenderer trail;
+	protected float speed = 10;
+	protected GameObject arrow;
+	protected TrailRenderer trail;
 	//public float playerInfluence;
 
-	bool isHeld = false;
+	protected bool isHeld = false;
 
 	public AudioClip hit;
 	public AudioClip wallDeflect;
 
-	Vector3 homePos;
+	protected Vector3 homePos;
 	protected LineCircle ring;
-	bool isHome = true;
+	protected bool isHome = true;
+
+	//public bool hostile;
 
 	
 
@@ -36,16 +38,26 @@ public class Ball : MonoBehaviour {
 			
 			if(col.gameObject.tag == "Left"){
 				Deflect(Vector3.right);
-				SetNeutral();
+				//SetNeutral();
 
 
 			}
 			
 			if(col.gameObject.tag == "Right"){
 				Deflect(Vector3.left);
+				//SetNeutral();
+
+
+			}
+
+			if (col.gameObject.transform.parent != null && col.gameObject.transform.parent.name == "Walls"){
+				if (!isNeutral && owner == null){
+					Camera.main.audio.PlayOneShot(wallDeflect);
+					GameObject.Destroy(this.gameObject);
+				}
+				else{
 				SetNeutral();
-
-
+			}
 			}
 			Camera.main.audio.PlayOneShot(wallDeflect);
 
@@ -59,6 +71,14 @@ public class Ball : MonoBehaviour {
 				Camera.main.audio.PlayOneShot(wallDeflect);
 
 			}
+			else if (!isNeutral && owner == null){
+				other.DecrementHealth();
+				Camera.main.audio.PlayOneShot(hit);
+				Deflect(normal);
+
+				GameObject.Destroy(this.gameObject);
+			}
+
 			else if (other.team == owner.team){
 				Deflect(normal);
 				Camera.main.audio.PlayOneShot(wallDeflect);
@@ -122,7 +142,7 @@ public class Ball : MonoBehaviour {
 		rigidbody2D.isKinematic = true;
 	}
 
-	void MoveBall(){
+	protected virtual void MoveBall(){
 
 		if (owner != null) {
 				moveDirection += owner.GetBallControlVector();
@@ -159,7 +179,7 @@ public class Ball : MonoBehaviour {
 	}
 
 	// Use this for initialization
-	void Start () {
+	protected void Start () {
 		ring = transform.FindChild ("Ring").GetComponent<LineCircle>();
 		ring.SetThickness (.075f);
 		//ring.SetRadius (this.transform.localScale.x);
@@ -175,7 +195,7 @@ public class Ball : MonoBehaviour {
 
 	}
 	// Update is called once per frame
-	void FixedUpdate () {
+	protected void FixedUpdate () {
 		if (owner != null && owner.isDead){ 
 			Debug.Log("neutralize ball, owner is dead");
 			SetNeutral();
@@ -253,5 +273,31 @@ public class Ball : MonoBehaviour {
 		collider2D.enabled = true;
 		trail.enabled = true;
 		trail.time = .3f;
+	}
+
+	IEnumerator Die(){
+		isHome = true;
+		
+		float effectSpeed = 20;
+		collider2D.enabled = false;
+		ring.SetRadius (1);
+		
+		trail.time = -1;
+		trail.enabled = false;
+		
+		float t = this.transform.localScale.x;
+		while (t > 0) {
+			t-=Time.deltaTime * effectSpeed;
+			this.transform.localScale = Vector3.one * t;
+			trail.startWidth = t;
+			Debug.Log(t);
+			yield return null;
+		}
+		t = 0;
+		
+		
+		yield return null;
+		
+		GameObject.Destroy (this.gameObject);
 	}
 }

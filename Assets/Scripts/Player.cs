@@ -3,7 +3,7 @@ using System.Collections;
 using XInputDotNetPure;
 
 
-public enum Team{ONE, TWO};
+public enum Team{ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT};
 
 public class Player : MonoBehaviour {
 	public int playerNum;
@@ -11,6 +11,7 @@ public class Player : MonoBehaviour {
 	public bool useTriggers;
 	//public bool ballControlLeftStick;
 	public bool ballControlRightStick;
+	public bool leftStickAim;
 
 
 	GameObject visual;
@@ -60,7 +61,7 @@ public class Player : MonoBehaviour {
 		gamepad = GamePad.GetState(gamepadNum);
 		UpdateSticks ();
 
-		if (rightStickAim) {
+		if (rightStickAim || leftStickAim) {
 						Aim ();
 				}
 
@@ -191,10 +192,16 @@ public class Player : MonoBehaviour {
 	}
 
 	void Aim(){
-		if (rightStick.magnitude > 0) {
-						float angle = Mathf.Atan2 (rightStick.y, rightStick.x) * Mathf.Rad2Deg;
-						transform.rotation = Quaternion.AngleAxis (angle, Vector3.forward);
+		if (rightStickAim && rightStick.magnitude > 0) {
+								float angle = Mathf.Atan2 (rightStick.y, rightStick.x) * Mathf.Rad2Deg;
+								transform.rotation = Quaternion.AngleAxis (angle, Vector3.forward);
+						
 				}
+		else if (leftStickAim && leftStick.magnitude > 0) {
+			float angle = Mathf.Atan2 (leftStick.y, leftStick.x) * Mathf.Rad2Deg;
+			transform.rotation = Quaternion.AngleAxis (angle, Vector3.forward);
+			
+		}
 	}
 
 	void Pickup(Ball b){
@@ -262,6 +269,8 @@ public class Player : MonoBehaviour {
 		SetColor (color);
 		ring = transform.FindChild ("Ring").GetComponent<LineCircle>();
 		ring.SetRadius (defenseRadius);
+
+		GameManager.Instance.AddPlayer (this);
 
 	}
 
