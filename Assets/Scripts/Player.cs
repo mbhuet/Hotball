@@ -288,14 +288,6 @@ public class Player : MonoBehaviour {
 	
 	//function to display health as tiny circles within the player
 	void DisplayHealth(){
-		//draw 3 circles
-		/*
-		healthBalls[0] = transform.FindChild("HPball0").GetComponent<LineCircle>();
-		healthBalls[1] = transform.FindChild("HPball1").GetComponent<LineCircle>();
-		healthBalls[2] = transform.FindChild("HPball2").GetComponent<LineCircle>();
-		dmgBalls[0] = transform.FindChild("Balls").FindChild("black0").GetComponent<MeshFilter>();
-		dmgBalls[1] = transform.FindChild("black1").GetComponent<MeshFilter>();
-		dmgBalls[2] = transform.FindChild("black2").GetComponent<MeshFilter>();*/
 
 		for(int i = 0; i < 3; i++){
 			if (i<health)
@@ -306,15 +298,25 @@ public class Player : MonoBehaviour {
 		}
 	}
 
-
+	public void SetHealth(int h){
+		health = h;
+		DisplayHealth ();
+	}
 	public void DecrementHealth(){
 		//makes one of the circles black
 		health--;
 		particleSystem.Emit(10);
 		DisplayHealth ();
 		if (health < 0) {
-			//Throw ();
-			StartCoroutine("Death");		
+			switch(GameManager.Instance.healthMode){
+			case HealthMode.STOCK :
+				StartCoroutine("Death");
+				break;
+			case HealthMode.STUN :
+				StartCoroutine("Stun");
+				break;
+			}
+					
 		}
 	}
 
@@ -416,6 +418,47 @@ public class Player : MonoBehaviour {
 
 		GameObject.Destroy (this.gameObject);
 
+	}
+
+	IEnumerator Stun(){
+		isDead = true;
+		Throw ();
+		this.enabled = false;
+		//GameObject.Destroy (this.collider2D);
+		//GameObject.Destroy (this.collider2D);
+		foreach (CircleCollider2D col in transform.GetComponents<CircleCollider2D> ()) {
+			col.enabled = false;		
+		}
+		//collider2D.enabled = false;
+		visual.renderer.enabled = false;
+		ring.gameObject.SetActive (false);
+		transform.FindChild ("Balls").gameObject.SetActive (false);
+		
+		yield return new WaitForSeconds (3);
+		
+		this.transform.position = Vector3.zero;
+		particleSystem.startSpeed = - Mathf.Abs(particleSystem.startSpeed);
+		particleSystem.Emit (10);
+
+		yield return new WaitForSeconds (.5f);
+
+
+
+		isDead = false;
+		Throw ();
+		this.enabled = true;
+		foreach (CircleCollider2D col in transform.GetComponents<CircleCollider2D> ()) {
+			col.enabled = true;		
+		}
+		visual.renderer.enabled = true;
+		ring.gameObject.SetActive (true);
+		transform.FindChild ("Balls").gameObject.SetActive (true);
+
+		SetHealth (GameManager.Instance.startingHealth);
+
+		particleSystem.startSpeed = Mathf.Abs(particleSystem.startSpeed);
+
+	
 	}
 	
 }

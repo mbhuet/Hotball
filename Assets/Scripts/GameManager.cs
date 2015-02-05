@@ -5,11 +5,18 @@ using System.Collections.Generic;
 
 using UnityEngine.UI;
 
+public enum GameMode{DEATHMATCH, OBJECTIVE}
+public enum HealthMode{STUN, STOCK}
+
 public class GameManager : MonoBehaviour {
 	public static GameManager Instance;
+	public HealthMode healthMode;
+	public GameMode gameMode;
 	public int numBalls;
 	public GameObject ball;
 	List<Player> players;
+
+	public int startingHealth = 3;
 
 	public bool rightAim;
 	public bool leftAim;
@@ -39,6 +46,9 @@ public class GameManager : MonoBehaviour {
 		if (Input.GetKeyDown(KeyCode.Alpha4)){
 			Application.LoadLevel(3);
 		}
+		if (Input.GetKeyDown(KeyCode.Alpha5)){
+			Application.LoadLevel(3);
+		}
 
 
 
@@ -56,6 +66,7 @@ public class GameManager : MonoBehaviour {
 		p.leftStickAim = leftAim;
 		p.useTriggers = useTriggers;
 		p.ballControlRightStick = rightBallCtrl;
+		p.SetHealth (startingHealth);
 	}
 
 	public void SetRightAim(bool b){

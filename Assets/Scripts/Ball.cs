@@ -25,95 +25,72 @@ public class Ball : MonoBehaviour {
 	
 
 	void OnCollisionEnter2D(Collision2D col){
-		if (LayerMask.NameToLayer("Wall") == col.collider.gameObject.layer) {
+		if (LayerMask.NameToLayer ("Wall") == col.collider.gameObject.layer) {
+						if (col.transform.tag == "Neutralize") {
+								SetNeutral ();
+						}
+						Deflect (col.contacts [0].normal);
 
-			if(col.gameObject.tag == "Top"){
-				Deflect(Vector3.down);
-			}
+						/*
+						if (col.gameObject.transform.parent != null && col.gameObject.transform.parent.name == "Walls") {
+								if (!isNeutral && owner == null) {
+										Camera.main.audio.PlayOneShot (wallDeflect);
+										GameObject.Destroy (this.gameObject);
+								} else {
+										SetNeutral ();
+								}
+						}
+						*/
+						Camera.main.audio.PlayOneShot (wallDeflect);
+
+				} else if (LayerMask.NameToLayer ("Player") == col.collider.gameObject.layer) {
+						Player other = col.gameObject.GetComponent<Player> ();
+						Vector3 normal = col.contacts [0].normal;
+
+						if (isNeutral) {
+								Deflect (normal);
+								Camera.main.audio.PlayOneShot (wallDeflect);
+
+						} else if (!isNeutral && owner == null) {
+								other.DecrementHealth ();
+								Camera.main.audio.PlayOneShot (hit);
+								Deflect (normal);
+
+								GameObject.Destroy (this.gameObject);
+						} else if (other.team == owner.team) {
+								Deflect (normal);
+								Camera.main.audio.PlayOneShot (wallDeflect);
+
+						} else if (other.team != owner.team) {
+								other.DecrementHealth ();
+								Deflect (normal);
+								SetNeutral ();
+								Camera.main.audio.PlayOneShot (hit);
+						}
+				} else if (LayerMask.NameToLayer ("Ball") == col.collider.gameObject.layer) {
+						Ball other = col.gameObject.GetComponent<Ball> ();
+						Vector3 normal = col.contacts [0].normal;
 			
-			if(col.gameObject.tag == "Bottom"){
-				Deflect(Vector3.up);
-
-			}
-			
-			if(col.gameObject.tag == "Left"){
-				Deflect(Vector3.right);
-				//SetNeutral();
-
-
-			}
-			
-			if(col.gameObject.tag == "Right"){
-				Deflect(Vector3.left);
-				//SetNeutral();
-
-
-			}
-
-			if (col.gameObject.transform.parent != null && col.gameObject.transform.parent.name == "Walls"){
-				if (!isNeutral && owner == null){
-					Camera.main.audio.PlayOneShot(wallDeflect);
-					GameObject.Destroy(this.gameObject);
-				}
-				else{
-				SetNeutral();
-			}
-			}
-			Camera.main.audio.PlayOneShot(wallDeflect);
-
-		}
-		if (LayerMask.NameToLayer("Player") == col.collider.gameObject.layer) {
-			Player other = col.gameObject.GetComponent<Player>();
-			Vector3 normal = (this.transform.position - other.transform.position).normalized;
-
-			if (isNeutral){
-				Deflect(normal);
-				Camera.main.audio.PlayOneShot(wallDeflect);
-
-			}
-			else if (!isNeutral && owner == null){
-				other.DecrementHealth();
-				Camera.main.audio.PlayOneShot(hit);
-				Deflect(normal);
-
-				GameObject.Destroy(this.gameObject);
-			}
-
-			else if (other.team == owner.team){
-				Deflect(normal);
-				Camera.main.audio.PlayOneShot(wallDeflect);
-
-			}
-			else if (other.team != owner.team){
-				other.DecrementHealth();
-					Deflect(normal);
-					SetNeutral();
-				Camera.main.audio.PlayOneShot(hit);
-			}
-		}
-
-		if (LayerMask.NameToLayer("Ball") == col.collider.gameObject.layer) {
-			Ball other = col.gameObject.GetComponent<Ball>();
-			Vector3 normal = (this.transform.position - other.transform.position).normalized;
-			
-			if (other.isNeutral){
-				//Physics2D.IgnoreCollision();
-				Deflect(normal);
-				Camera.main.audio.PlayOneShot(wallDeflect);
+						if (other.isNeutral) {
+								//Physics2D.IgnoreCollision();
+								Deflect (normal);
+								Camera.main.audio.PlayOneShot (wallDeflect);
 				
-			}
-			else if (!this.isNeutral){
-			if (other.owner.team == owner.team){
-				Deflect(normal);
-				Camera.main.audio.PlayOneShot(wallDeflect);
+						} else if (!this.isNeutral) {
+								if (other.owner.team == owner.team) {
+										Deflect (normal);
+										Camera.main.audio.PlayOneShot (wallDeflect);
 				
-			}
-			else if (other.owner.team != owner.team){
-				Deflect(normal);
-				Camera.main.audio.PlayOneShot(wallDeflect);
-			}
-			}
+								} else if (other.owner.team != owner.team) {
+										Deflect (normal);
+										Camera.main.audio.PlayOneShot (wallDeflect);
+								}
+						}
+				} else {
+			Deflect(col.contacts[0].normal);
+
 		}
+
 
 			
 	}
@@ -146,8 +123,8 @@ public class Ball : MonoBehaviour {
 
 		if (owner != null) {
 				moveDirection += owner.GetBallControlVector();
-			if (moveDirection.magnitude < .5f){
-				moveDirection = moveDirection.normalized * .5f;
+			if (moveDirection.magnitude < .1f){
+				moveDirection = moveDirection.normalized * .1f;
 			}
 				} else
 						moveDirection *= (1-Time.fixedDeltaTime * .5f);
