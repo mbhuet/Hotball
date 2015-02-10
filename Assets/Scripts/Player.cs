@@ -21,7 +21,7 @@ public class Player : MonoBehaviour {
 	public int health = 3;
 	public float speed = 6;
 	public float ballInfluence = .05f;
-	Ball heldBall;
+	Weapon heldWeapon;
 	//bool isThrowing;
 	//float scaleFactor;
 	//bool againstWall;
@@ -137,9 +137,9 @@ public class Player : MonoBehaviour {
 	}
 
 	void Throw(){
-		if(heldBall != null){
-			heldBall.Release (this.transform.right);
-			heldBall = null;
+		if(heldWeapon != null){
+			heldWeapon.ButtonDown();
+			heldWeapon = null;
 			PlayThrowSound();
 		}
 	}
@@ -158,12 +158,12 @@ public class Player : MonoBehaviour {
 				if(!ball.isNeutral && ball.owner.team != this.team){
 					Camera.main.audio.PlayOneShot (catchSound);
 					ball.particleSystem.Emit(10);
-					if (heldBall == null){
+					if (heldWeapon == null){
 						Pickup(ball);
 						RecoverHealth();
 					}
 					else{
-						ball.Deflect(ball.transform.position - this.transform.position);
+						//ball.Deflect(ball.transform.position - this.transform.position);
 						ball.SetNeutral();
 
 					}
@@ -172,7 +172,7 @@ public class Player : MonoBehaviour {
 				if (ball.isNeutral){
 				}
 				else{
-					if (heldBall == null){
+					if (heldWeapon == null){
 						ball.particleSystem.Emit(10);
 						//Camera.main.audio.PlayOneShot (catchSound);
 
@@ -204,11 +204,11 @@ public class Player : MonoBehaviour {
 		}
 	}
 
-	void Pickup(Ball b){
+	void Pickup(Weapon w){
 //		Debug.Log("Pickup Ball");
 		PlayPickupSound ();
-		heldBall = b;
-		heldBall.SetOwner (this);
+		heldWeapon = w;
+		heldWeapon.SetOwner (this);
 	}
 
 	void Move(){
@@ -282,8 +282,7 @@ public class Player : MonoBehaviour {
 	
 	void PlayPickupSound(){
 		Camera.main.audio.PlayOneShot (pickupSound);
-		//AudioSource.PlayClipAtPoint(pickupSound, transform.position);
-		Debug.Log("pickup sound");
+
 	}
 	
 	//function to display health as tiny circles within the player
@@ -331,7 +330,7 @@ public class Player : MonoBehaviour {
 	void OnTriggerEnter2D(Collider2D other){
 		if(other.tag == "Ball"){
 			Ball ball = other.GetComponent<Ball>();
-			if (ball.isNeutral && heldBall == null){
+			if ((ball.isNeutral) && heldWeapon == null){
 				Pickup(ball);
 			}
 			
