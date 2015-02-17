@@ -3,27 +3,26 @@ using System.Collections;
 
 public class Ball : Weapon
 {
-	protected GameObject arrow;
-	protected TrailRenderer trail;
-	protected float speed = 10;
-	protected LineCircle ring;//used to discretely shrink the weapon.
-	protected Vector3 moveDirection;
-
-
-
-	public AudioClip player_hit;
-	public AudioClip wall_hit;
-
-
+		protected GameObject arrow;
+		protected TrailRenderer trail;
+		protected float speed = 10;
+		protected LineCircle ring;//used to discretely shrink the weapon.
+		protected Vector3 moveDirection;
+		public AudioClip player_hit;
+		public AudioClip wall_hit;
 		public int rem_ricochets = 1;
-	protected int max_richochets;
-
-
-	public override void ButtonDown(){
-		Activate (owner.transform.right);
+		protected int max_richochets;
+	protected float launch_speed = .5f;
+	protected float min_speed = .1f;
+	protected float max_speed = 3;
+		
+		public override void ButtonDown ()
+		{
+				Activate (owner.transform.right * launch_speed);
 		}
 
-	public override void ButtonUp(){
+		public override void ButtonUp ()
+		{
 		}
 
 		void OnCollisionEnter2D (Collision2D col)
@@ -92,14 +91,14 @@ public class Ball : Weapon
 
 				if (owner != null) {
 						moveDirection += owner.GetBallControlVector ();
-						if (moveDirection.magnitude < .1f) {
-								moveDirection = moveDirection.normalized * .1f;
+						if (moveDirection.magnitude < min_speed) {
+								moveDirection = moveDirection.normalized * min_speed;
 						}
 				} else
 						moveDirection *= (1 - Time.fixedDeltaTime * .5f);
 
-				if (moveDirection.magnitude > 3) {
-						moveDirection = moveDirection.normalized * 3;
+				if (moveDirection.magnitude > max_speed) {
+						moveDirection = moveDirection.normalized * max_speed;
 			
 				}
 
@@ -125,8 +124,8 @@ public class Ball : Weapon
 		// Use this for initialization
 		protected void Start ()
 		{
-		base.Start();
-		max_richochets = rem_ricochets;
+				base.Start ();
+				max_richochets = rem_ricochets;
 				ring = transform.FindChild ("Ring").GetComponent<LineCircle> ();
 				ring.SetThickness (.075f);
 				arrow = transform.FindChild ("Arrow").gameObject;
@@ -156,12 +155,12 @@ public class Ball : Weapon
 	
 		public override void SetOwner (Player p)
 		{
-		Debug.Log ("set owner");
+				Debug.Log ("set owner");
 				this.gameObject.layer = LayerMask.NameToLayer ("Ball");
 				owner = p;
 				SetColor (owner.color);
-		isNeutral = false;
-		rem_ricochets = max_richochets;
+				isNeutral = false;
+				rem_ricochets = max_richochets;
 
 				state = WeaponState.HELD;
 				collider2D.enabled = false;
