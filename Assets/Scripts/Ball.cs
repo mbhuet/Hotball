@@ -12,9 +12,9 @@ public class Ball : Weapon
 		public AudioClip wall_hit;
 		public int rem_ricochets = 1;
 		protected int max_richochets;
-	protected float launch_speed = .5f;
-	protected float min_speed = .1f;
-	protected float max_speed = 3;
+		protected float launch_speed = .5f;
+		protected float min_speed = .1f;
+		protected float max_speed = 3;
 		
 		public override void ButtonDown ()
 		{
@@ -58,7 +58,6 @@ public class Ball : Weapon
 								Camera.main.audio.PlayOneShot (player_hit);
 						}
 						Deflect (normal);
-
 						break;
 
 				case "Ball":
@@ -126,17 +125,22 @@ public class Ball : Weapon
 		{
 				base.Start ();
 				max_richochets = rem_ricochets;
-				ring = transform.FindChild ("Ring").GetComponent<LineCircle> ();
 				ring.SetThickness (.075f);
-				arrow = transform.FindChild ("Arrow").gameObject;
-				trail = transform.FindChild ("Trail").gameObject.GetComponent<TrailRenderer> ();
+
+				if (state == WeaponState.IDLE)
 				SetNeutral ();
 
 		}
 
+		protected void Awake(){
+			ring = transform.FindChild ("Ring").GetComponent<LineCircle> ();
+			arrow = transform.FindChild ("Arrow").gameObject;
+			trail = transform.FindChild ("Trail").gameObject.GetComponent<TrailRenderer> ();
+		}
+
 		protected void FixedUpdate ()
 		{
-				if (owner != null && owner.isDead) { 
+				if (owner != null && owner.isDead && !GameManager.Instance.ballsReturn) { 
 						SetNeutral ();
 				}
 
@@ -151,20 +155,26 @@ public class Ball : Weapon
 				arrow.renderer.material.color = color;
 				trail.renderer.material.color = color;
 				particleSystem.startColor = color;
+
 		}
 	
 		public override void SetOwner (Player p)
 		{
-				Debug.Log ("set owner");
-				this.gameObject.layer = LayerMask.NameToLayer ("Ball");
+//		Debug.Log (rem_ricochets);
+				this.gameObject.layer = LayerMask.NameToLayer ("Weapon");
+
 				owner = p;
 				SetColor (owner.color);
 				isNeutral = false;
 				rem_ricochets = max_richochets;
 
 				state = WeaponState.HELD;
+				collider2D.isTrigger = false;
+
 				collider2D.enabled = false;
 				trail.enabled = false;
+				arrow.renderer.enabled = true;
+
 				transform.parent = owner.transform;
 				transform.localPosition = Vector3.right * .8f;
 				transform.localRotation = Quaternion.Euler (0, 0, -90);
@@ -173,11 +183,13 @@ public class Ball : Weapon
 	
 		public void SetNeutral ()
 		{
+		collider2D.isTrigger = true;
 				state = WeaponState.IDLE;
 				isNeutral = true;
 				owner = null;
 				SetColor (Color.white);
-				this.gameObject.layer = LayerMask.NameToLayer ("DeadBall");
+				this.gameObject.layer = LayerMask.NameToLayer ("Pickup");
+				this.rigidbody2D.isKinematic = true;
 		}
 
 		void ResetPosition ()
@@ -193,7 +205,10 @@ public class Ball : Weapon
 						Vector3 reflection = Vector3.Reflect (moveDirection, normal);
 						moveDirection = reflection;
 				} else {
-						StartCoroutine (Die ());
+						if (GameManager.Instance.ballRespawn)
+								StartCoroutine (ReturnHome ());
+						else
+								StartCoroutine (Die ());
 				}
 
 		}
@@ -212,7 +227,7 @@ public class Ball : Weapon
 		IEnumerator ReturnHome ()
 		{
 
-				state = WeaponState.IDLE;
+				SetNeutral ();
 
 				float effectSpeed = 2;
 				collider2D.enabled = false;
@@ -243,7 +258,6 @@ public class Ball : Weapon
 				}
 				this.transform.localScale = Vector3.one * .5f;
 				trail.startWidth = .5f;
-//		Debug.Log ("here");
 				ring.SetRadius (0);
 				collider2D.enabled = true;
 				trail.enabled = true;
@@ -267,7 +281,10 @@ public class Ball : Weapon
 		
 		
 				yield return null;
-		
-				GameObject.Destroy (this.gameObject);
+				if (GameManager.Instance.ballsReturn) {
+						owner.PickupWeapon (this);		
+				} else {
+						GameObject.Destroy (this.gameObject);
+				}
 		}
 }

@@ -13,7 +13,10 @@ public class GameManager : MonoBehaviour {
 	public HealthMode healthMode;
 	public GameMode gameMode;
 	public int numBalls;
-	public GameObject ball;
+	public int numBarriers;
+
+	public GameObject ballPrefab;
+	public GameObject barrierPrefab;
 	List<Player> players;
 
 	public int startingHealth = 3;
@@ -23,12 +26,18 @@ public class GameManager : MonoBehaviour {
 	public bool useTriggers;
 	public bool rightBallCtrl;
 
-	float court_height = 10;
+//	public bool droppableBarriers;
+	public bool ballsReturn;
+	public bool holdMultipleWeapons;
+	public bool ballRespawn;
+
+	public float court_height = 10;
 	// Use this for initialization
 	void Start () {
 		Instance = this;
 		players = new List<Player> ();
 		PlaceBalls();
+		PlaceBarriers ();
 
 	}
 	
@@ -56,7 +65,16 @@ public class GameManager : MonoBehaviour {
 
 	void PlaceBalls(){
 		for (int i= 0; i< numBalls; i++) {
-			GameObject.Instantiate(ball, Vector3.zero + Vector3.up * (court_height/2 - court_height/(numBalls + 1) * (i+1)), Quaternion.identity);
+			GameObject.Instantiate(ballPrefab, Vector3.zero + Vector3.up * (court_height/2 - court_height/(numBalls + 1) * (i+1)), Quaternion.identity);
+		}
+	}
+
+	void PlaceBarriers(){
+		for (int i= 0; i< numBarriers; i++) {
+			GameObject.Instantiate(barrierPrefab, Vector3.right * 2 + Vector3.up * (court_height/2 - court_height/(numBarriers + 1) * (i+1)), Quaternion.identity);
+		}
+		for (int i= 0; i< numBarriers; i++) {
+			GameObject.Instantiate(barrierPrefab, Vector3.right * -2 + Vector3.up * (court_height/2 - court_height/(numBarriers + 1) * (i+1)), Quaternion.identity);
 		}
 	}
 
