@@ -13,8 +13,11 @@ public class Ball : Weapon
 		public int rem_ricochets = 1;
 		protected int max_richochets;
 		protected float launch_speed = .5f;
-		protected float min_speed = .1f;
+		public float min_speed = .1f;
 		protected float max_speed = 3;
+	public float returnDelay = 1;
+	
+	Flag flag;
 		
 	bool isAwake = false;
 		
@@ -77,6 +80,19 @@ public class Ball : Weapon
 						Deflect (normal);
 						break;
 				}
+
+
+		}
+
+		void OnTriggerEnter2D(Collider2D other){
+		if (other.transform.tag == "Flag") {
+			Debug.Log("here");
+			Flag f = other.gameObject.GetComponent<Flag>();
+			if (owner.team != f.team){
+				flag = f;
+				f.Grab(this);
+			}
+		}
 		}
 
 		protected virtual void MoveBall ()
@@ -115,7 +131,6 @@ public class Ball : Weapon
 		protected void Start ()
 		{
 				base.Start ();
-				max_richochets = rem_ricochets;
 				ring.SetThickness (.075f);
 
 				if (state == WeaponState.IDLE)
@@ -127,7 +142,9 @@ public class Ball : Weapon
 		{
 				ring = transform.FindChild ("Ring").GetComponent<LineCircle> ();
 				trail = transform.FindChild ("Trail").gameObject.GetComponent<TrailRenderer> ();
-		isAwake = true;
+				max_richochets = rem_ricochets;
+
+				isAwake = true;
 		}
 
 		protected void FixedUpdate ()
@@ -143,7 +160,7 @@ public class Ball : Weapon
 
 		protected override void SetColor (Color color)
 		{
-		Debug.Log ("setcolor");
+//		Debug.Log ("setcolor");
 				renderer.material.color = color;
 				visual.renderer.material.color = color;
 				trail.renderer.material.color = color;
@@ -153,7 +170,7 @@ public class Ball : Weapon
 	
 		public override void SetOwner (Player p)
 		{
-//		Debug.Log (rem_ricochets);
+		base.SetOwner (p);
 				this.gameObject.layer = LayerMask.NameToLayer ("Weapon");
 
 				owner = p;
@@ -161,16 +178,12 @@ public class Ball : Weapon
 				rem_ricochets = max_richochets;
 
 				state = WeaponState.HELD;
-				collider2D.isTrigger = false;
-
-				collider2D.enabled = false;
 				trail.enabled = false;
 				visual.renderer.enabled = true;
 
 				transform.parent = owner.transform;
 				transform.localPosition = Vector3.right * .8f;
 				transform.localRotation = Quaternion.Euler (0, 0, -90);
-				rigidbody2D.isKinematic = true;
 		}
 	
 		public void SetNeutral ()
@@ -202,6 +215,9 @@ public class Ball : Weapon
 								StartCoroutine (Die ());
 				}
 
+
+			
+
 		}
 
 		public void Activate (Vector3 direction)
@@ -214,6 +230,15 @@ public class Ball : Weapon
 				rigidbody2D.isKinematic = false;
 				moveDirection = direction;
 		}
+
+	public override void Hide(){
+		visual.renderer.enabled = false;
+		collider2D.enabled = false;
+	}
+	public override void Show(){
+		visual.renderer.enabled = true;
+		//collider2D.enabled = true;
+	}
 
 		IEnumerator ReturnHome ()
 		{
@@ -255,24 +280,23 @@ public class Ball : Weapon
 				trail.time = .3f;
 		}
 
-		IEnumerator Die ()
+		public override IEnumerator Die ()
 		{
+		if (flag != null) {
+			flag.Drop ();
+			flag = null;
+		}
+				owner.weaponManager.RemoveActiveWeapon (this);
 				state = WeaponState.IDLE;
 				moveDirection = Vector3.zero;
 				particleSystem.Emit (20);
-				collider2D.enabled = false;
-				visual.renderer.enabled = false;
+		Hide ();
 
-				float t = trail.time;
-				while (t > 0) {
-						t -= Time.deltaTime;
-						yield return null;
-				}
-				t = 0;
+		yield return new WaitForSeconds (trail.time);
 		
 		
-				yield return null;
 				if (GameManager.Instance.ballsReturn) {
+			yield return new WaitForSeconds(returnDelay);
 						owner.weaponManager.AddWeapon (this);		
 				} else {
 						GameObject.Destroy (this.gameObject);

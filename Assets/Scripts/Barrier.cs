@@ -23,6 +23,7 @@ public class Barrier : Weapon
 		activeImage = transform.FindChild ("active_image").gameObject;
 		invalidImage = transform.FindChild ("invalid_image").gameObject;
 		ring = transform.FindChild ("Ring").GetComponent<LineCircle> ();
+		invalidImage.renderer.enabled = false;
 		}
 
 
@@ -40,17 +41,25 @@ public class Barrier : Weapon
 		}
 	public override void ButtonUp(){
 		}
+	public override void Hide(){
+		activeImage.renderer.enabled = false;
+		collider2D.enabled = false;
+	}
+	public override void Show(){
+		activeImage.renderer.enabled = true;
+		collider2D.enabled = true;
+	}
 
 		void OnCollisionEnter2D (Collision2D col)
 		{
 				if (col.gameObject.layer == LayerMask.NameToLayer ("Weapon")) {
-					if (this.owner.team == col.gameObject.GetComponent<Weapon>().owner.team){
+					if ( this.owner != null && this.owner.team == col.gameObject.GetComponent<Weapon>().owner.team){
 						Physics2D.IgnoreCollision(this.collider2D, col.collider, true);
 			}
 			else{
 						health--;
 						if (health <= 0)
-							StartCoroutine(ReturnHome ());
+							StartCoroutine(Die ());
 			}
 			
 				}
@@ -91,13 +100,19 @@ public class Barrier : Weapon
 
 		}
 	
-		IEnumerator Die ()
+		public override IEnumerator Die ()
 		{
+			yield return null;
+			if (owner != null)	owner.weaponManager.RemoveActiveBarrier (this);
+
+				Camera.main.audio.PlayOneShot (breakSound);
+				
+				Hide ();
 				state = WeaponState.IDLE;
 				particleSystem.Emit (20);
-				collider2D.enabled = false;
 
-				yield return new WaitForSeconds (particleSystem.time);
+
+				yield return new WaitForSeconds (particleSystem.startLifetime);
 				GameObject.Destroy (this.gameObject);
 
 		}

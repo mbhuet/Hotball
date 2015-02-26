@@ -22,6 +22,7 @@ public class Player : MonoBehaviour
 		public static bool useTriggers;
 		public static bool ballControlRightStick;
 		public static bool leftStickAim;
+	public static float respawnDelay = 5;
 
 		//settings
 		public int playerNum;
@@ -42,8 +43,6 @@ public class Player : MonoBehaviour
 		protected LineCircle ring;
 		bool defenseAvailable = true;
 		public GameObject[] healthBars;
-		public AudioClip throwSound;
-		public AudioClip pickupSound;
 		public AudioClip catchSound;
 		public bool isDead = false;
 
@@ -272,7 +271,7 @@ public class Player : MonoBehaviour
 								StartCoroutine ("Death");
 								break;
 						case HealthMode.STUN:
-								StartCoroutine ("Stun");
+								StartCoroutine (Respawn(respawnDelay));
 								break;
 						}
 					
@@ -287,10 +286,7 @@ public class Player : MonoBehaviour
 				DisplayHealth ();
 		}
 
-		void OnTriggerEnter2D (Collider2D other)
-		{
-				
-		}
+		
 
 		IEnumerator ActiveDefense ()
 		{
@@ -355,6 +351,7 @@ public class Player : MonoBehaviour
 				visual.renderer.enabled = false;
 				ring.gameObject.SetActive (false);
 				transform.FindChild ("Balls").gameObject.SetActive (false);
+		weaponManager.Die ();
 
 				//DROP BARRIER
 				//DROP WEAPONS
@@ -373,20 +370,22 @@ public class Player : MonoBehaviour
 				this.transform.position = respawnPosition;
 				SetHealth (GameManager.Instance.startingHealth);
 
+		weaponManager.Show ();
+
 		}
 
-		IEnumerator Respawn (float respawnDelay)
+		IEnumerator Respawn (float delay)
 		{
 				Die ();
 				this.enabled = false;
 		
-				yield return new WaitForSeconds (respawnDelay);
+				yield return new WaitForSeconds (delay);
 
 				Spawn ();
 				particleSystem.startSpeed = - Mathf.Abs (particleSystem.startSpeed);
 				particleSystem.Emit (10);
 
-				yield return new WaitForSeconds (particleSystem.time / 2);
+				yield return new WaitForSeconds (particleSystem.time * 2f/3f);
 
 				particleSystem.startSpeed = Mathf.Abs (particleSystem.startSpeed);
 				this.enabled = true;
