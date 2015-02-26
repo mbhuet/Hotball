@@ -8,7 +8,6 @@ public class Seeker : Ball {
 
 	protected void Start(){
 		base.Start ();
-		this.isNeutral = false;
 		//speed = Random.Range (8, 15);
 	}
 
@@ -38,9 +37,7 @@ public class Seeker : Ball {
 			float angle = Mathf.Atan2(moveDirection.y, moveDirection.x) * Mathf.Rad2Deg;
 			transform.rotation = Quaternion.AngleAxis(angle -90, Vector3.forward);
 				} 
-		if (moveDirection.magnitude < .1f && isNeutral && state != WeaponState.ACTIVE) {
-			StartCoroutine("Die");
-		}
+
 	}
 
 

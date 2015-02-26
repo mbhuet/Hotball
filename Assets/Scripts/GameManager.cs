@@ -15,8 +15,8 @@ public class GameManager : MonoBehaviour {
 	public int numBalls;
 	public int numBarriers;
 
-	public GameObject ballPrefab;
-	public GameObject barrierPrefab;
+	public GameObject ballPickupPrefab;
+	public GameObject barrierPickupPrefab;
 	List<Player> players;
 
 	public int startingHealth = 3;
@@ -38,6 +38,12 @@ public class GameManager : MonoBehaviour {
 		players = new List<Player> ();
 		PlaceBalls();
 		PlaceBarriers ();
+
+		Player.rightStickAim = rightAim;
+		Player.leftStickAim = leftAim;
+		Player.useTriggers = useTriggers;
+		Player.ballControlRightStick = rightBallCtrl;
+
 
 	}
 	
@@ -65,53 +71,23 @@ public class GameManager : MonoBehaviour {
 
 	void PlaceBalls(){
 		for (int i= 0; i< numBalls; i++) {
-			GameObject.Instantiate(ballPrefab, Vector3.zero + Vector3.up * (court_height/2 - court_height/(numBalls + 1) * (i+1)), Quaternion.identity);
+			GameObject.Instantiate(ballPickupPrefab, Vector3.zero + Vector3.up * (court_height/2 - court_height/(numBalls + 1) * (i+1)), Quaternion.identity);
 		}
 	}
 
 	void PlaceBarriers(){
 		for (int i= 0; i< numBarriers; i++) {
-			GameObject.Instantiate(barrierPrefab, Vector3.right * 2 + Vector3.up * (court_height/2 - court_height/(numBarriers + 1) * (i+1)), Quaternion.identity);
+			GameObject.Instantiate(barrierPickupPrefab, Vector3.right * 2 + Vector3.up * (court_height/2 - court_height/(numBarriers + 1) * (i+1)), Quaternion.identity);
 		}
 		for (int i= 0; i< numBarriers; i++) {
-			GameObject.Instantiate(barrierPrefab, Vector3.right * -2 + Vector3.up * (court_height/2 - court_height/(numBarriers + 1) * (i+1)), Quaternion.identity);
+			GameObject.Instantiate(barrierPickupPrefab, Vector3.right * -2 + Vector3.up * (court_height/2 - court_height/(numBarriers + 1) * (i+1)), Quaternion.identity);
 		}
 	}
 
 	public void AddPlayer(Player p){
 		players.Add (p);
-		p.rightStickAim = rightAim;
-		p.leftStickAim = leftAim;
-		p.useTriggers = useTriggers;
-		p.ballControlRightStick = rightBallCtrl;
 		p.SetHealth (startingHealth);
-	}
 
-	public void SetRightAim(bool b){
-		foreach (Player p in players) {
-
-			p.rightStickAim = b;
-		}
-		Debug.Log ("right aim");
-	}
-	public void SetLeftAim(bool b){
-		foreach (Player p in players) {
-			
-			p.leftStickAim = b;
-		}
-	}
-	public void SetTriggers(bool b){
-		foreach (Player p in players) {
-			
-			p.useTriggers = b;
-		}
-	}
-
-	public void SetRightBallControl(bool b){
-		foreach (Player p in players) {
-			
-			p.ballControlRightStick = b;
-		}
 	}
 
 

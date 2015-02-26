@@ -1,50 +1,56 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class Barrier : MonoBehaviour
+public class Barrier : Weapon
 {
-		public WeaponState state = WeaponState.IDLE;
-		Vector3 homePos;
-		public Player owner;
 		int health;
 		int maxHealth = 1;
 		protected LineCircle ring;//used to discretely shrink the weapon.
 
-		GameObject idleImage;
 		GameObject activeImage;
 		GameObject invalidImage;
-	public float respawnTime = 1;
+		public float respawnTime = 1;
 
 	public AudioClip dropSound;
 	public AudioClip breakSound;
 
-		void Start ()
+
+	void Awake(){
+		Init ();
+		}
+
+	public override void Init(){
+		activeImage = transform.FindChild ("active_image").gameObject;
+		invalidImage = transform.FindChild ("invalid_image").gameObject;
+		ring = transform.FindChild ("Ring").GetComponent<LineCircle> ();
+		}
+
+
+	void Start ()
 		{
 				health = maxHealth;
 				homePos = this.transform.position;
 				
-				idleImage = transform.FindChild ("idle_image").gameObject;
-				activeImage = transform.FindChild ("active_image").gameObject;
-				invalidImage = transform.FindChild ("invalid_image").gameObject;
-
-
-				ring = transform.FindChild ("Ring").GetComponent<LineCircle> ();
+				
 				ring.SetThickness (.075f);
+		}
 
-				SetNeutral ();
+	public override void ButtonDown(){
+		Drop ();
+		}
+	public override void ButtonUp(){
 		}
 
 		void OnCollisionEnter2D (Collision2D col)
 		{
 				if (col.gameObject.layer == LayerMask.NameToLayer ("Weapon")) {
 					if (this.owner.team == col.gameObject.GetComponent<Weapon>().owner.team){
-				Physics2D.IgnoreCollision(this.collider2D, col.collider, true);
+						Physics2D.IgnoreCollision(this.collider2D, col.collider, true);
 			}
 			else{
 						health--;
 						if (health <= 0)
 							StartCoroutine(ReturnHome ());
-								//Die ();
 			}
 			
 				}
@@ -52,14 +58,12 @@ public class Barrier : MonoBehaviour
 
 		IEnumerator ReturnHome ()
 		{
-		yield return null;
+				yield return null;
 				Camera.main.audio.PlayOneShot (breakSound);
 
 				this.gameObject.layer = LayerMask.NameToLayer ("Dead");
 				float effectSpeed = 2;
 
-				SetNeutral ();
-				idleImage.SetActive (false);
 				
 				health = maxHealth;
 				state = WeaponState.IDLE;
@@ -84,7 +88,6 @@ public class Barrier : MonoBehaviour
 				ring.SetRadius (0);
 				collider2D.enabled = true;
 
-				SetNeutral ();
 
 		}
 	
@@ -99,30 +102,12 @@ public class Barrier : MonoBehaviour
 
 		}
 
-		void SetNeutral ()
-		{
-				if (owner != null) {
-						owner.barrier = null;
-						owner = null;
-				}
 
-				this.gameObject.layer = LayerMask.NameToLayer ("Pickup");
-		collider2D.isTrigger = true;
-
-				transform.parent = null;
-				state = WeaponState.IDLE;
-				invalidImage.SetActive (false);
-				idleImage.SetActive (true);
-				activeImage.SetActive (false);
-		}
 
 	public void SetOwner(Player p){
-		owner = p;
-		SetColor(owner.color);
-		transform.parent = owner.transform;
+		base.SetOwner (p);
+
 		transform.localPosition = Vector3.right * 2;
-		transform.localRotation = Quaternion.identity;
-		
 
 		this.gameObject.layer = LayerMask.NameToLayer ("Wall");
 		state = WeaponState.HELD;
@@ -130,9 +115,6 @@ public class Barrier : MonoBehaviour
 		collider2D.enabled = true;
 		collider2D.isTrigger = false;
 
-		rigidbody2D.isKinematic = true;
-
-		idleImage.SetActive (false);
 		activeImage.SetActive (true);
 	}
 
@@ -143,7 +125,8 @@ public class Barrier : MonoBehaviour
 		collider2D.enabled = true;
 	}
 
-	void SetColor(Color c){
+	protected override void SetColor(Color c){
+//		Debug.Log (activeImage);
 		activeImage.renderer.material.color = c;
 		particleSystem.startColor = c;
 		invalidImage.renderer.material.color = c;

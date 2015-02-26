@@ -18,29 +18,27 @@ public enum Team
 
 public class Player : MonoBehaviour
 {
+		public static bool rightStickAim;
+		public static bool useTriggers;
+		public static bool ballControlRightStick;
+		public static bool leftStickAim;
+
+		//settings
 		public int playerNum;
-		public bool rightStickAim;
-		public bool useTriggers;
-		//public bool ballControlLeftStick;
-		public bool ballControlRightStick;
-		public bool leftStickAim;
-		GameObject visual;
 		public Team team;
+		public Color color;
 		public int health = 3;
 		public float speed = 6;
 		public float ballInfluence = .05f;
-		List<Weapon> heldWeapons;
-		//bool isThrowing;
-		//float scaleFactor;
-		//bool againstWall;
-		//public Vector3 moveVector;
-		//public Vector3 ballPullVector;
-		public Color color;
+		//List<Weapon> heldWeapons;
+		
+
+		GameObject visual;
+		public WeaponManager weaponManager;
 		private LineCircle[] healthBalls;
 		private MeshFilter[] dmgBalls;
 		float defenseRadius = 1.4f;
-		protected PlayerIndex gamepadNum;
-		protected GamePadState gamepad;
+		Vector3 respawnPosition;
 		protected LineCircle ring;
 		bool defenseAvailable = true;
 		public GameObject[] healthBars;
@@ -48,24 +46,21 @@ public class Player : MonoBehaviour
 		public AudioClip pickupSound;
 		public AudioClip catchSound;
 		public bool isDead = false;
+
+		//controls
+		protected PlayerIndex gamepadNum;
+		protected GamePadState gamepad;
 		Vector3 leftStick;
 		Vector3 rightStick;
-//		public Barrier barrierPrefab;
-		public Barrier barrier; // the barrier this player owns
-
 		bool fireHeld = false;
+
+		//public Barrier barrier; // the barrier this player owns
+
+		
 		// Use this for initialization
 		void Start ()
 		{
 				Init ();
-
-				if (GameManager.Instance.ballsReturn) {
-						GameObject myBall = GameObject.Instantiate (GameManager.Instance.ballPrefab, this.transform.position, Quaternion.identity) as GameObject;
-
-						//PickupWeapon(myBall.GetComponent<Ball>());
-
-				}
-
 		}
 	
 		// Update is called once per frame
@@ -80,7 +75,7 @@ public class Player : MonoBehaviour
 
 				if (playerNum == 0) {
 						if (Input.GetButtonDown ("Fire1")) {
-								Throw ();
+								weaponManager.Fire ();
 						}
 						if (Input.GetButtonDown ("Fire2") && defenseAvailable) {
 								Catch ();
@@ -89,13 +84,13 @@ public class Player : MonoBehaviour
 
 						}
 						if (Input.GetButtonUp ("Fire3")) {
-								DropBarrier ();
+								weaponManager.DropBarrier();
 						}
 				} else {
 						if (((!useTriggers && gamepad.Buttons.A == ButtonState.Pressed) ||
 								(useTriggers && gamepad.Triggers.Right > 0)) && !fireHeld) {
 								fireHeld = true;
-								Throw ();
+								weaponManager.Fire ();
 						}
 						if (((!useTriggers && gamepad.Buttons.B == ButtonState.Pressed) ||
 								(useTriggers && gamepad.Triggers.Left > 0))
@@ -105,7 +100,7 @@ public class Player : MonoBehaviour
 
 						}
 						if (gamepad.Buttons.LeftShoulder == ButtonState.Pressed) {
-								DropBarrier ();
+								weaponManager.DropBarrier ();
 						}
 
 						if ((!useTriggers && gamepad.Buttons.A == ButtonState.Released) ||
@@ -122,48 +117,12 @@ public class Player : MonoBehaviour
 
 		void SetColor (Color c)
 		{
-				//renderer.material.color = color;
 				visual.renderer.material.color = c;
 				particleSystem.startColor = c;
 		}
 
-		void SetTeamLayer(){
-		string layerName = "Default";
-		switch (team) {
-		case Team.ONE:
-			layerName = "TeamOne";
-			break;
-		case Team.TWO:
-			layerName = "TeamTwo";
-			break;
-		case Team.THREE:
-			layerName = "TeamThree";
-			break;
-		case Team.FOUR:
-			layerName = "TeamFour";
-			break;
-		case Team.FIVE:
-			layerName = "TeamFive";
-				break;
-		case Team.SIX:
-			layerName = "TeamSix";
-			break;
-		case Team.SEVEN:
-			layerName = "TeamSeven";
-			break;
-		case Team.EIGHT:
-			layerName = "TeamEight";
-			break;
-		default:
-			break;
-		}
-		gameObject.layer = LayerMask.NameToLayer (layerName);
-
-	}
-
 		void UpdateSticks ()
 		{
-
 				float leftX, leftY, rightX, rightY;
 				//for debugging without a controller
 				if (playerNum == 0) {
@@ -181,28 +140,31 @@ public class Player : MonoBehaviour
 				rightStick = new Vector3 (rightX, rightY, 0);
 		}
 
-		void Throw ()
+		void Aim ()
 		{
-				if (heldWeapons.Count > 0) {
-						heldWeapons [0].ButtonDown ();
-						heldWeapons.RemoveAt (0);
-						PlayThrowSound ();
-						ArrangeWeapons ();
+				if (rightStickAim && rightStick.magnitude > 0) {
+						float angle = Mathf.Atan2 (rightStick.y, rightStick.x) * Mathf.Rad2Deg;
+						transform.rotation = Quaternion.AngleAxis (angle, Vector3.forward);
+			
+				} else if (leftStickAim && leftStick.magnitude > 0) {
+						float angle = Mathf.Atan2 (leftStick.y, leftStick.x) * Mathf.Rad2Deg;
+						transform.rotation = Quaternion.AngleAxis (angle, Vector3.forward);
+			
 				}
 		}
-
-		void Block (Ball ball)
-		{
-
-		}
-
+		
 		void Catch ()
 		{
 				Collider2D[] objectsInRing = Physics2D.OverlapCircleAll (new Vector2 (transform.position.x, transform.position.y), defenseRadius + .1f);
 				foreach (Collider2D obj in objectsInRing) {
 						if (obj.gameObject.tag == "Ball") {
-								//StartCoroutine("SlowMotion", .1f);
 								Ball ball = obj.GetComponent<Ball> ();
+								ball.Deflect ((ball.transform.position - this.transform.position).normalized);
+								Camera.main.audio.PlayOneShot (catchSound);
+
+								/*
+								//StartCoroutine("SlowMotion", .1f);
+
 								//catching an opponent's ball
 								if (!ball.isNeutral && ball.owner.team != this.team) {
 										Camera.main.audio.PlayOneShot (catchSound);
@@ -216,80 +178,12 @@ public class Player : MonoBehaviour
 
 										}
 								}
-								/*
-				if (ball.isNeutral){
-				}
-				else{
-					if (heldWeapon == null){
-						ball.particleSystem.Emit(10);
-						//Camera.main.audio.PlayOneShot (catchSound);
-
-						Pickup(ball);
-					}
-					else{ 
-						ball.Deflect(ball.transform.position - this.transform.position);
-						//Camera.main.audio.PlayOneShot (catchSound);
-
-						ball.particleSystem.Emit(10);
-						ball.SetNeutral();
-					}
-				}
-				*/
+								*/
 						}
 				}
 		}
 
-		void Aim ()
-		{
-				if (rightStickAim && rightStick.magnitude > 0) {
-						float angle = Mathf.Atan2 (rightStick.y, rightStick.x) * Mathf.Rad2Deg;
-						transform.rotation = Quaternion.AngleAxis (angle, Vector3.forward);
-						
-				} else if (leftStickAim && leftStick.magnitude > 0) {
-						float angle = Mathf.Atan2 (leftStick.y, leftStick.x) * Mathf.Rad2Deg;
-						transform.rotation = Quaternion.AngleAxis (angle, Vector3.forward);
-			
-				}
-		}
-
-		public void PickupWeapon (Weapon w)
-		{
-				if (GameManager.Instance.holdMultipleWeapons || heldWeapons.Count == 0) {
-						PlayPickupSound ();
-						heldWeapons.Add (w);
-						w.SetOwner (this);
-						ArrangeWeapons ();
-				}
-		}
-
-		public void PickupBarrier (Barrier bar)
-		{
-				if (barrier == null) {
-						PlayPickupSound ();
-						barrier = bar;
-						bar.SetOwner (this);
-				}
-
-		}
-
-		void ArrangeWeapons ()
-		{
-				int dir = 1;
-				for (int i = 0; i< heldWeapons.Count; i++) {
-						Weapon w = heldWeapons [i];
-						w.transform.localPosition = Vector3.right * .8f;
-						transform.localRotation = Quaternion.Euler (0, 0, 270);
-						if (i == 0) {
-				
-						} else {
-								float a = 40 * dir * Mathf.Floor ((i + 1) / 2f);
-								//w.transform.localRotation = Quaternion.AngleAxis(Vector3.forward, a);
-								w.transform.RotateAround (this.transform.position, Vector3.forward, a);
-//				Debug.Log(i + ", " + 40 * dir * Mathf.Floor((i+1)/2f));
-						} 
-						dir = -dir;
-				}
-		}
+		
 
 		void Move ()
 		{
@@ -309,7 +203,6 @@ public class Player : MonoBehaviour
 
 		public void Init ()
 		{
-				heldWeapons = new List<Weapon> ();
 				switch (playerNum) {
 				case 1:
 						gamepadNum = PlayerIndex.One;
@@ -332,56 +225,21 @@ public class Player : MonoBehaviour
 						break;
 				}
 				name = ("Player " + playerNum);
-				//healthBalls = new LineCircle[health];
-				//dmgBalls = new MeshFilter[health];
 				DisplayHealth ();
-				/* I'm not sure why this block exists
-				if (rightStickAim) {
-					
-				}
-		//players on the right side of the screen are rotated to point left.
-		else if (this.transform.position.x > 0) {
-						transform.Rotate (0, 0, 180);
-				} else {
-						transform.FindChild ("Balls").GetComponent<Transform> ().Rotate (0, 0, 180);
-						Vector3 currPos = transform.FindChild ("Balls").GetComponent<Transform> ().localPosition;
-						Vector3 newPos = new Vector3 (currPos.x, -currPos.y, currPos.z);
-
-						transform.FindChild ("Balls").GetComponent<Transform> ().localPosition = newPos;
-
-				}
-				*/
+				weaponManager = GetComponent<WeaponManager> ();
 				visual = transform.FindChild ("Visual").gameObject;
 
 				
 				ring = transform.FindChild ("Ring").GetComponent<LineCircle> ();
 				ring.SetRadius (defenseRadius);
+				respawnPosition = this.transform.position;
+
 
 				SetColor (color);
 
 				GameManager.Instance.AddPlayer (this);
 
-		}
-
-		void PlayThrowSound ()
-		{
-				Camera.main.audio.PlayOneShot (throwSound);
-		}
-	
-		void PlayPickupSound ()
-		{
-				Camera.main.audio.PlayOneShot (pickupSound);
-		}
-
-		void DropBarrier ()
-		{
-				if (barrier != null) {
-						barrier.Drop ();
-						barrier = null;
-				}
-		}
-
-		
+		}		
 
 	
 		//function to display health as tiny circles within the player
@@ -393,7 +251,6 @@ public class Player : MonoBehaviour
 								healthBars [i].renderer.enabled = false;
 						else
 								healthBars [i].renderer.enabled = true;
-
 				}
 		}
 
@@ -432,21 +289,7 @@ public class Player : MonoBehaviour
 
 		void OnTriggerEnter2D (Collider2D other)
 		{
-				if (other.tag == "Ball") {
-						Ball ball = other.GetComponent<Ball> ();
-						if ((ball.isNeutral)) {
-								PickupWeapon (ball);
-						}
-			
-				}
-				if (other.tag == "Barrier") {
-						Barrier bar = other.GetComponent<Barrier> ();
-						if ((bar.state == WeaponState.IDLE)) {
-								PickupBarrier (bar);
-						}
-			
-
-				}
+				
 		}
 
 		IEnumerator ActiveDefense ()
@@ -500,86 +343,53 @@ public class Player : MonoBehaviour
 
 				ring.SetRadius (defenseRadius);
 				defenseAvailable = true;
-				//Debug.Log ("Defense Available");
 		}
 
-		IEnumerator SlowMotion (float scale)
-		{
-				Time.timeScale = 0;
-				while (Time.timeScale < 1) {
-						Time.timeScale += Time.unscaledDeltaTime * scale;
-						yield return null;
-				}
-
-				Time.timeScale = 1;
-		}
-
-		IEnumerator Death ()
+		void Die ()
 		{
 				isDead = true;
-
-				if (!GameManager.Instance.ballsReturn)
-						Throw ();
-
-				DropBarrier ();
-				this.enabled = false;
-				//GameObject.Destroy (this.collider2D);
-				//GameObject.Destroy (this.collider2D);
 				foreach (CircleCollider2D col in transform.GetComponents<CircleCollider2D> ()) {
-						col.enabled = false;		
+						col.enabled = false;	
 				}
-				//collider2D.enabled = false;
+
 				visual.renderer.enabled = false;
 				ring.gameObject.SetActive (false);
 				transform.FindChild ("Balls").gameObject.SetActive (false);
 
-				yield return new WaitForSeconds (2);
-
-				GameObject.Destroy (this.gameObject);
+				//DROP BARRIER
+				//DROP WEAPONS
 
 		}
 
-		IEnumerator Stun ()
+		void Spawn ()
 		{
-				isDead = true;
-				if (!GameManager.Instance.ballsReturn)
-						Throw ();
-
-				DropBarrier ();
-
-				this.enabled = false;
-				//GameObject.Destroy (this.collider2D);
-				//GameObject.Destroy (this.collider2D);
-				foreach (CircleCollider2D col in transform.GetComponents<CircleCollider2D> ()) {
-						col.enabled = false;		
-				}
-				//collider2D.enabled = false;
-				visual.renderer.enabled = false;
-				ring.gameObject.SetActive (false);
-				transform.FindChild ("Balls").gameObject.SetActive (false);
-		
-				yield return new WaitForSeconds (3);
-		
-				this.transform.position = Vector3.zero;
-				particleSystem.startSpeed = - Mathf.Abs (particleSystem.startSpeed);
-				particleSystem.Emit (10);
-
-				yield return new WaitForSeconds (.5f);
-
-
-
 				isDead = false;
-				this.enabled = true;
 				foreach (CircleCollider2D col in transform.GetComponents<CircleCollider2D> ()) {
 						col.enabled = true;		
 				}
 				visual.renderer.enabled = true;
 				ring.gameObject.SetActive (true);
 				transform.FindChild ("Balls").gameObject.SetActive (true);
-
+				this.transform.position = respawnPosition;
 				SetHealth (GameManager.Instance.startingHealth);
 
+		}
+
+		IEnumerator Respawn (float respawnDelay)
+		{
+				Die ();
+				this.enabled = false;
+		
+				yield return new WaitForSeconds (respawnDelay);
+
+				Spawn ();
+				particleSystem.startSpeed = - Mathf.Abs (particleSystem.startSpeed);
+				particleSystem.Emit (10);
+
+				yield return new WaitForSeconds (particleSystem.time / 2);
+
 				particleSystem.startSpeed = Mathf.Abs (particleSystem.startSpeed);
+				this.enabled = true;
 
 	
 		}
