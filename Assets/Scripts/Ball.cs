@@ -15,15 +15,14 @@ public class Ball : Weapon
 		protected float launch_speed = .5f;
 		public float min_speed = .1f;
 		protected float max_speed = 3;
-	public float returnDelay = 1;
-	
-	Flag flag;
+		public float returnDelay = 1;
+		Flag flag;
+		bool isAwake = false;
 		
-	bool isAwake = false;
-		
-	void Awake(){
-		Init ();
-	}
+		void Awake ()
+		{
+				Init ();
+		}
 
 		public override void ButtonDown ()
 		{
@@ -84,15 +83,16 @@ public class Ball : Weapon
 
 		}
 
-		void OnTriggerEnter2D(Collider2D other){
-		if (other.transform.tag == "Flag") {
-			Debug.Log("here");
-			Flag f = other.gameObject.GetComponent<Flag>();
-			if (owner.team != f.team){
-				flag = f;
-				f.Grab(this);
-			}
-		}
+		void OnTriggerEnter2D (Collider2D other)
+		{
+				if (other.transform.tag == "Flag") {
+//						Debug.Log ("here");
+						Flag f = other.gameObject.GetComponent<Flag> ();
+						if (owner.team != f.team) {
+								flag = f;
+								f.Grab (this);
+						}
+				}
 		}
 
 		protected virtual void MoveBall ()
@@ -170,7 +170,7 @@ public class Ball : Weapon
 	
 		public override void SetOwner (Player p)
 		{
-		base.SetOwner (p);
+				base.SetOwner (p);
 				this.gameObject.layer = LayerMask.NameToLayer ("Weapon");
 
 				owner = p;
@@ -214,11 +214,24 @@ public class Ball : Weapon
 						else
 								StartCoroutine (Die ());
 				}
-
-
-			
-
 		}
+	public void Redirect(Vector3 direction, float force){
+		if (rem_ricochets > 0) {
+			rem_ricochets --;
+			moveDirection = direction.normalized * moveDirection.magnitude + direction.normalized * force;
+
+		} else {
+			if (GameManager.Instance.ballRespawn)
+				StartCoroutine (ReturnHome ());
+			else
+				StartCoroutine (Die ());
+		}
+		}
+
+	public void Deflect(Vector3 normal, float force){
+		Deflect (normal);
+		moveDirection = moveDirection + moveDirection.normalized * force;
+	}
 
 		public void Activate (Vector3 direction)
 		{
@@ -231,14 +244,17 @@ public class Ball : Weapon
 				moveDirection = direction;
 		}
 
-	public override void Hide(){
-		visual.renderer.enabled = false;
-		collider2D.enabled = false;
-	}
-	public override void Show(){
-		visual.renderer.enabled = true;
-		//collider2D.enabled = true;
-	}
+		public override void Hide ()
+		{
+				visual.renderer.enabled = false;
+				collider2D.enabled = false;
+		}
+
+		public override void Show ()
+		{
+				visual.renderer.enabled = true;
+				//collider2D.enabled = true;
+		}
 
 		IEnumerator ReturnHome ()
 		{
@@ -282,21 +298,21 @@ public class Ball : Weapon
 
 		public override IEnumerator Die ()
 		{
-		if (flag != null) {
-			flag.Drop ();
-			flag = null;
-		}
+				if (flag != null) {
+						flag.Drop ();
+						flag = null;
+				}
 				owner.weaponManager.RemoveActiveWeapon (this);
 				state = WeaponState.IDLE;
 				moveDirection = Vector3.zero;
 				particleSystem.Emit (20);
-		Hide ();
+				Hide ();
 
-		yield return new WaitForSeconds (trail.time);
+				yield return new WaitForSeconds (trail.time);
 		
 		
 				if (GameManager.Instance.ballsReturn) {
-			yield return new WaitForSeconds(returnDelay);
+						yield return new WaitForSeconds (returnDelay);
 						owner.weaponManager.AddWeapon (this);		
 				} else {
 						GameObject.Destroy (this.gameObject);

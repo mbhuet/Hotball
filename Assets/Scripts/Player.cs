@@ -22,7 +22,7 @@ public class Player : MonoBehaviour
 		public static bool useTriggers;
 		public static bool ballControlRightStick;
 		public static bool leftStickAim;
-	public static float respawnDelay = 5;
+		public static float respawnDelay = 5;
 
 		//settings
 		public int playerNum;
@@ -42,9 +42,14 @@ public class Player : MonoBehaviour
 		Vector3 respawnPosition;
 		protected LineCircle ring;
 		bool defenseAvailable = true;
+		bool defenseActive = false;
 		public GameObject[] healthBars;
 		public AudioClip catchSound;
 		public bool isDead = false;
+
+	GameObject sprite;
+	SpriteRenderer spriteRenderer;
+	Animator spriteAnim;
 
 		//controls
 		protected PlayerIndex gamepadNum;
@@ -54,7 +59,7 @@ public class Player : MonoBehaviour
 		bool fireHeld = false;
 
 		//public Barrier barrier; // the barrier this player owns
-
+		
 		
 		// Use this for initialization
 		void Start ()
@@ -83,7 +88,7 @@ public class Player : MonoBehaviour
 
 						}
 						if (Input.GetButtonUp ("Fire3")) {
-								weaponManager.DropBarrier();
+								weaponManager.DropBarrier ();
 						}
 				} else {
 						if (((!useTriggers && gamepad.Buttons.A == ButtonState.Pressed) ||
@@ -94,8 +99,8 @@ public class Player : MonoBehaviour
 						if (((!useTriggers && gamepad.Buttons.B == ButtonState.Pressed) ||
 								(useTriggers && gamepad.Triggers.Left > 0))
 								&& defenseAvailable) {
-								Catch ();
-								StartCoroutine ("DefenseCooldown");
+								//Catch ();
+								StartCoroutine (ActivateDefense ());
 
 						}
 						if (gamepad.Buttons.LeftShoulder == ButtonState.Pressed) {
@@ -107,6 +112,8 @@ public class Player : MonoBehaviour
 								fireHeld = false;
 						}
 				}
+
+		sprite.transform.rotation = Quaternion.identity;
 		}
 
 		void FixedUpdate ()
@@ -141,48 +148,45 @@ public class Player : MonoBehaviour
 
 		void Aim ()
 		{
-				if (rightStickAim && rightStick.magnitude > 0) {
-						float angle = Mathf.Atan2 (rightStick.y, rightStick.x) * Mathf.Rad2Deg;
-						transform.rotation = Quaternion.AngleAxis (angle, Vector3.forward);
-			
-				} else if (leftStickAim && leftStick.magnitude > 0) {
-						float angle = Mathf.Atan2 (leftStick.y, leftStick.x) * Mathf.Rad2Deg;
-						transform.rotation = Quaternion.AngleAxis (angle, Vector3.forward);
-			
+		Vector3 stick = Vector3.zero;
+				if (rightStickAim) {
+			stick = rightStick;
+
+				} else if (leftStickAim) {
+			stick = leftStick;
 				}
+
+		if (stick.magnitude > 0) {
+			float angle = Mathf.Atan2 (rightStick.y, rightStick.x) * Mathf.Rad2Deg;
+			transform.rotation = Quaternion.AngleAxis (angle, Vector3.forward);
+			float sp_angle = angle + 90;
+			if (sp_angle < 0){
+				sp_angle = 360 + sp_angle;
+			}
+			spriteAnim.SetFloat ("rotation", sp_angle);
+
+			if (sp_angle > 348.74 || sp_angle < 11.25){
+				spriteAnim.SetTrigger("lookSouth");
+			}
+
+			Debug.Log(sp_angle);
+
+			
+		}
 		}
 		
 		void Catch ()
 		{
-				Collider2D[] objectsInRing = Physics2D.OverlapCircleAll (new Vector2 (transform.position.x, transform.position.y), defenseRadius + .1f);
+				Collider2D[] objectsInRing = Physics2D.OverlapCircleAll (new Vector2 (transform.position.x, transform.position.y), defenseRadius);
 				foreach (Collider2D obj in objectsInRing) {
 						if (obj.gameObject.tag == "Ball") {
 								Ball ball = obj.GetComponent<Ball> ();
-								ball.Deflect ((ball.transform.position - this.transform.position).normalized);
+								ball.Deflect ((ball.transform.position - this.transform.position).normalized, 1);
 								Camera.main.audio.PlayOneShot (catchSound);
 
-								/*
-								//StartCoroutine("SlowMotion", .1f);
-
-								//catching an opponent's ball
-								if (!ball.isNeutral && ball.owner.team != this.team) {
-										Camera.main.audio.PlayOneShot (catchSound);
-										ball.particleSystem.Emit (10);
-										if (heldWeapons.Count == 0) {
-												PickupWeapon (ball);
-												//RecoverHealth ();
-										} else {
-												//ball.Deflect(ball.transform.position - this.transform.position);
-												ball.SetNeutral ();
-
-										}
-								}
-								*/
 						}
 				}
 		}
-
-		
 
 		void Move ()
 		{
@@ -230,9 +234,12 @@ public class Player : MonoBehaviour
 
 				
 				ring = transform.FindChild ("Ring").GetComponent<LineCircle> ();
-				ring.SetRadius (defenseRadius);
+				ring.SetRadius (.55f);
 				respawnPosition = this.transform.position;
-
+				
+		sprite = transform.FindChild ("sprite").gameObject;
+			spriteRenderer = sprite.GetComponent<SpriteRenderer>();
+		spriteAnim = sprite.GetComponent<Animator> ();
 
 				SetColor (color);
 
@@ -271,7 +278,7 @@ public class Player : MonoBehaviour
 								StartCoroutine ("Death");
 								break;
 						case HealthMode.STUN:
-								StartCoroutine (Respawn(respawnDelay));
+								StartCoroutine (Respawn (respawnDelay));
 								break;
 						}
 					
@@ -286,58 +293,85 @@ public class Player : MonoBehaviour
 				DisplayHealth ();
 		}
 
-		
+		/*
+		void OnTriggerStay2D (Collider2D other)
+		{
+				if (defenseActive) {
+						if (other.gameObject.tag == "Ball") {
+								Ball ball = other.GetComponent<Ball> ();
+								ball.Deflect ((ball.transform.position - this.transform.position).normalized, 1);
+								Camera.main.audio.PlayOneShot (catchSound);
+						}
+				}
+		}
+		*/
 
-		IEnumerator ActiveDefense ()
+		IEnumerator ActivateDefense ()
 		{
 				float maxRadius = 1.25f;
-				float growSpeed = 2;
+				float growSpeed = .4f;
+				float holdMax = .1f;
+
+				List<Ball> ignoreList = new List<Ball> ();
+
 				//Debug.Log ("Activate Defense");
 				defenseAvailable = false;
+				defenseActive = true;
 				defenseRadius = .55f;
 				ring.SetRadius (defenseRadius);
-				while (defenseRadius < maxRadius) {
-						defenseRadius += Time.deltaTime * growSpeed;
+
+				while (defenseRadius < maxRadius-.1f) {
+						defenseRadius = Mathf.Lerp (defenseRadius, maxRadius, growSpeed);
 						ring.SetRadius (defenseRadius);
+						
+
+						Collider2D[] objectsInRing = Physics2D.OverlapCircleAll (new Vector2 (transform.position.x, transform.position.y), defenseRadius);
+						foreach (Collider2D obj in objectsInRing) {
+								if (obj.gameObject.tag == "Ball") {
+										Ball ball = obj.GetComponent<Ball> ();
+										if (!ignoreList.Contains (ball)) {
+												ball.Redirect ((ball.transform.position - this.transform.position).normalized, 1);
+												Camera.main.audio.PlayOneShot (catchSound);
+												ignoreList.Add (ball);
+						Debug.Log(ignoreList);
+										}
+								}
+						}
 						yield return null;
 				}
-				if (defenseRadius >= maxRadius) {
-						defenseRadius = maxRadius;
-						ring.SetRadius (defenseRadius);
-						yield return new WaitForSeconds (.3f);
+
+				defenseRadius = maxRadius;
+				ring.SetRadius (defenseRadius);
+
+				float t = holdMax;
+				while (t>0) {
+						Catch ();
+						t -= Time.deltaTime;
+						yield return null;		
 				}
+						
+				yield return new WaitForSeconds (.1f);
 				//Debug.Log("after");
+				
+				defenseActive = false;
 				defenseRadius = 0;
 				ring.SetRadius (defenseRadius);
 
-				StartCoroutine ("DefenseCooldown");
+				StartCoroutine (DefenseCooldown ());
 		}
 
 		IEnumerator DefenseCooldown ()
 		{
 				defenseAvailable = false;
-				float effectSpeed = 10;
-				//float maxDefenseRadius = defenseRadius;
-				//Debug.Log("DefenseCooldown");
-				float t = defenseRadius;
-				//defenseRadius = 0;
-
-				while (t > .55f) {
-						t -= Time.deltaTime * effectSpeed;
-						ring.SetRadius (t);
-						yield return null;
-				}
-				ring.SetRadius (.55f);
-				t = .55f;
-				yield return new WaitForSeconds (1);
-
-				while (t < defenseRadius) {
-						t += Time.deltaTime * effectSpeed;
-						ring.SetRadius (t);
-						yield return null;
-				}
-
+				float cooldownTime = .5f;
+				defenseRadius = 0;
 				ring.SetRadius (defenseRadius);
+
+				yield return new WaitForSeconds (cooldownTime);
+				
+				defenseRadius = .55f;
+				ring.SetRadius (defenseRadius);
+				
 				defenseAvailable = true;
 		}
 
@@ -351,7 +385,7 @@ public class Player : MonoBehaviour
 				visual.renderer.enabled = false;
 				ring.gameObject.SetActive (false);
 				transform.FindChild ("Balls").gameObject.SetActive (false);
-		weaponManager.Die ();
+				weaponManager.Die ();
 
 				//DROP BARRIER
 				//DROP WEAPONS
@@ -370,7 +404,7 @@ public class Player : MonoBehaviour
 				this.transform.position = respawnPosition;
 				SetHealth (GameManager.Instance.startingHealth);
 
-		weaponManager.Show ();
+				weaponManager.Show ();
 
 		}
 
@@ -385,7 +419,7 @@ public class Player : MonoBehaviour
 				particleSystem.startSpeed = - Mathf.Abs (particleSystem.startSpeed);
 				particleSystem.Emit (10);
 
-				yield return new WaitForSeconds (particleSystem.time * 2f/3f);
+				yield return new WaitForSeconds (particleSystem.time * 2f / 3f);
 
 				particleSystem.startSpeed = Mathf.Abs (particleSystem.startSpeed);
 				this.enabled = true;
