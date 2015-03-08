@@ -46,10 +46,9 @@ public class Player : MonoBehaviour
 		public GameObject[] healthBars;
 		public AudioClip catchSound;
 		public bool isDead = false;
-
-	GameObject sprite;
-	SpriteRenderer spriteRenderer;
-	Animator spriteAnim;
+		GameObject sprite;
+		SpriteRenderer spriteRenderer;
+		Animator spriteAnim;
 
 		//controls
 		protected PlayerIndex gamepadNum;
@@ -113,7 +112,7 @@ public class Player : MonoBehaviour
 						}
 				}
 
-		sprite.transform.rotation = Quaternion.identity;
+				sprite.transform.rotation = Quaternion.identity;
 		}
 
 		void FixedUpdate ()
@@ -148,31 +147,44 @@ public class Player : MonoBehaviour
 
 		void Aim ()
 		{
-		Vector3 stick = Vector3.zero;
+				Vector3 stick = Vector3.zero;
 				if (rightStickAim) {
-			stick = rightStick;
+						stick = rightStick;
 
 				} else if (leftStickAim) {
-			stick = leftStick;
+						stick = leftStick;
 				}
 
-		if (stick.magnitude > 0) {
-			float angle = Mathf.Atan2 (rightStick.y, rightStick.x) * Mathf.Rad2Deg;
-			transform.rotation = Quaternion.AngleAxis (angle, Vector3.forward);
-			float sp_angle = angle + 90;
-			if (sp_angle < 0){
-				sp_angle = 360 + sp_angle;
-			}
-			spriteAnim.SetFloat ("rotation", sp_angle);
+				if (stick.magnitude > 0) {
+						float stick_angle = Mathf.Atan2 (rightStick.y, rightStick.x) * Mathf.Rad2Deg;
 
-			if (sp_angle > 348.74 || sp_angle < 11.25){
-				spriteAnim.SetTrigger("lookSouth");
-			}
+						Quaternion cur_rot = this.transform.rotation;
+						Quaternion stick_rot = Quaternion.AngleAxis (stick_angle, Vector3.forward);
+						Quaternion target_rot = Quaternion.Lerp (cur_rot, stick_rot, .3f);
 
+
+						float sp_angle = 0;
+						Vector3 up = Vector3.zero;
+
+						//sp_angle = target_rot.ToAngleAxis (out sp_angle, out up);
+			sp_angle = target_rot.eulerAngles.z + 90;
+
+						transform.rotation = target_rot;
+						//sp_angle = stick_angle + 90;
+						if (sp_angle < 0) {
+								sp_angle = 360 + sp_angle;
+						}
+						if (sp_angle > 360){
+				sp_angle = sp_angle - 360;
+			}
+						spriteAnim.SetFloat ("rotation", sp_angle);
 			Debug.Log(sp_angle);
 
+
+						//Debug.Log (sp_angle);
+
 			
-		}
+				}
 		}
 		
 		void Catch ()
@@ -237,9 +249,9 @@ public class Player : MonoBehaviour
 				ring.SetRadius (.55f);
 				respawnPosition = this.transform.position;
 				
-		sprite = transform.FindChild ("sprite").gameObject;
-			spriteRenderer = sprite.GetComponent<SpriteRenderer>();
-		spriteAnim = sprite.GetComponent<Animator> ();
+				sprite = transform.FindChild ("sprite").gameObject;
+				spriteRenderer = sprite.GetComponent<SpriteRenderer> ();
+				spriteAnim = sprite.GetComponent<Animator> ();
 
 				SetColor (color);
 
@@ -333,7 +345,7 @@ public class Player : MonoBehaviour
 												ball.Redirect ((ball.transform.position - this.transform.position).normalized, 1);
 												Camera.main.audio.PlayOneShot (catchSound);
 												ignoreList.Add (ball);
-						Debug.Log(ignoreList);
+												Debug.Log (ignoreList);
 										}
 								}
 						}
@@ -381,8 +393,8 @@ public class Player : MonoBehaviour
 				foreach (CircleCollider2D col in transform.GetComponents<CircleCollider2D> ()) {
 						col.enabled = false;	
 				}
-
-				visual.renderer.enabled = false;
+				spriteRenderer.enabled = false;
+				//visual.renderer.enabled = false;
 				ring.gameObject.SetActive (false);
 				transform.FindChild ("Balls").gameObject.SetActive (false);
 				weaponManager.Die ();
@@ -398,9 +410,10 @@ public class Player : MonoBehaviour
 				foreach (CircleCollider2D col in transform.GetComponents<CircleCollider2D> ()) {
 						col.enabled = true;		
 				}
-				visual.renderer.enabled = true;
+				//visual.renderer.enabled = true;
+				spriteRenderer.enabled = true;
 				ring.gameObject.SetActive (true);
-				transform.FindChild ("Balls").gameObject.SetActive (true);
+				//transform.FindChild ("Balls").gameObject.SetActive (true);
 				this.transform.position = respawnPosition;
 				SetHealth (GameManager.Instance.startingHealth);
 
