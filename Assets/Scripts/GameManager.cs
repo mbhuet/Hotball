@@ -28,8 +28,8 @@ public class GameManager : MonoBehaviour {
 
 //	public bool droppableBarriers;
 	public bool ballsReturn;
-	public bool holdMultipleWeapons;
 	public bool ballRespawn;
+	public bool playerRespawn;
 
 	public float court_height = 10;
 	// Use this for initialization

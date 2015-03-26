@@ -18,8 +18,8 @@ public class Flag : MonoBehaviour {
 	{
 
 		if (other.gameObject.layer == LayerMask.NameToLayer ("Line")) {
-			particleSystem.Emit(10);
-			Camera.main.audio.PlayOneShot(captureSound);
+			GetComponent<ParticleSystem>().Emit(10);
+			Camera.main.GetComponent<AudioSource>().PlayOneShot(captureSound);
 			Drop ();
 			this.transform.position = homePosition;
 		}
@@ -30,14 +30,14 @@ public class Flag : MonoBehaviour {
 	}
 
 	void SetColor(Color c){
-		flag.renderer.material.color = c;
-		particleSystem.startColor = c;
+		flag.GetComponent<Renderer>().material.color = c;
+		GetComponent<ParticleSystem>().startColor = c;
 	
 	}
 
 	public void Grab(Ball b){
-		Camera.main.audio.PlayOneShot (grabSound);
-		SetColor (b.owner.color);
+		Camera.main.GetComponent<AudioSource>().PlayOneShot (grabSound);
+		SetColor (b.GetOwner().color);
 		this.transform.parent = b.transform;
 		transform.localPosition = Vector3.zero;
 	}

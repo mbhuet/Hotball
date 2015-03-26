@@ -14,7 +14,7 @@ public class WeaponPickup : MonoBehaviour {
 
 	public void Deactivate(){
 		visual.SetActive (false);
-		collider2D.enabled = false;
+		GetComponent<Collider2D>().enabled = false;
 	}
 
 	public Weapon GetPickup(){
@@ -28,7 +28,7 @@ public class WeaponPickup : MonoBehaviour {
 	IEnumerator DelayedActivation(){
 		yield return new WaitForSeconds(delay);
 		visual.SetActive (true);
-		collider2D.enabled = true;
+		GetComponent<Collider2D>().enabled = true;
 	}
 
 }

@@ -32,7 +32,7 @@ public class Seeker : Ball {
 		Vector3 move = moveDirection * Time.fixedDeltaTime * speed;
 		
 
-		this.rigidbody2D.MovePosition (this.transform.position + move);
+		this.GetComponent<Rigidbody2D>().MovePosition (this.transform.position + move);
 		if (moveDirection.magnitude > .01f) {
 			float angle = Mathf.Atan2(moveDirection.y, moveDirection.x) * Mathf.Rad2Deg;
 			transform.rotation = Quaternion.AngleAxis(angle -90, Vector3.forward);
