@@ -176,6 +176,8 @@ public class WeaponManager : MonoBehaviour
 						Weapon w = heldWeaponList [i];
 						w.transform.localPosition = Vector3.right * .8f;
 						if (i == 0) {
+				w.transform.localRotation = Quaternion.Euler(0,0,-90);
+
 				
 						} else {
 								float a = 40 * dir * Mathf.Floor ((i + 1) / 2f);

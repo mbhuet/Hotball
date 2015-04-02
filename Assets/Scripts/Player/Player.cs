@@ -184,12 +184,19 @@ public class Player : MonoBehaviour
 		void CheckGround(){
 		LayerMask mask = LayerMask.GetMask("Ground", "Hazard");
 		Collider2D under = Physics2D.OverlapPoint (this.transform.position, mask);
-		if (under != null && under.gameObject.GetComponent<Hazard> () != null) {
-			Debug.Log (under.name);
+		if (under != null) {
+						if (under.gameObject.GetComponent<Hazard> () != null) {
+								Debug.Log (under.name);
 
-			Hazard haz = under.gameObject.GetComponent<Hazard>();
-			haz.Effect(this);
-		}
+								Hazard haz = under.gameObject.GetComponent<Hazard> ();
+								haz.Effect (this);
+						}
+			else if (under.gameObject.layer == LayerMask.NameToLayer("Ground")) {
+				this.transform.parent = under.transform;
+				Vector3 groundScale = under.transform.localScale;
+				//this.transform.localScale = new Vector3(1f/groundScale.y, 1f/groundScale.x, 1f/groundScale.z);
+			}
+				}
 
 	}
 
