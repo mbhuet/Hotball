@@ -17,7 +17,11 @@ public class Water : Hazard {
 	}
 
 	public override void OnTouch (Player player){
-		player.StartCoroutine(player.Panic(this));
+//		Debug.Log (player.movementVector.magnitude + ", " + player.speed * Time.deltaTime);
+		if (player.movementVector.magnitude <= .1f) {
+						player.StartCoroutine (player.Panic (this));
+				}
+		else Effect(player);
 	}
 	
 
