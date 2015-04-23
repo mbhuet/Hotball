@@ -15,6 +15,10 @@ public class Water : Hazard {
 		GameObject.Instantiate (splash, player.transform.position, Quaternion.identity);
 		player.Kill ();
 	}
+
+	public override void OnTouch (Player player){
+		player.StartCoroutine(player.Panic(this));
+	}
 	
 
 }

@@ -15,6 +15,13 @@ public enum Team
 		EIGHT}
 ;
 
+public enum PlayerState
+{
+	WALK,
+	DEAD,
+	PANIC}
+;
+
 public class Player : MonoBehaviour
 {
 		public static bool rightStickAim;
@@ -62,6 +69,7 @@ public class Player : MonoBehaviour
 		bool fireHeld = false;
 	bool slapHeld = false;
 		bool dashing = false;
+	PlayerState state = PlayerState.WALK;
 
 		//for point tracking
 	public int points;
@@ -197,7 +205,7 @@ public class Player : MonoBehaviour
 				}
 
 				sprite.transform.rotation = Quaternion.identity;
-		CheckGround ();
+		if (state ==  PlayerState.WALK) CheckGround ();
 		}
 
 		void FixedUpdate ()
@@ -213,7 +221,7 @@ public class Player : MonoBehaviour
 								Debug.Log (under.name);
 
 								Hazard haz = under.gameObject.GetComponent<Hazard> ();
-								haz.Effect (this);
+								haz.OnTouch (this);
 						}
 			else if (under.gameObject.layer == LayerMask.NameToLayer("Ground")) {
 				this.transform.parent = under.transform;
@@ -231,6 +239,16 @@ public class Player : MonoBehaviour
 						GamePad.SetVibration (gamepadNum, vib, vib);
 				}
 		}
+	IEnumerator Vibrate(float intensity, float duration){
+		SetVibration(intensity);
+		float t = 0;
+		while(t<duration){
+			t+=Time.deltaTime;
+			yield return null;
+		}
+		SetVibration(0);
+
+	}
 
 		void SetColor (Color c)
 		{
@@ -565,6 +583,7 @@ public class Player : MonoBehaviour
 		}
 
 
+
 		public void ApplyKnockback (Vector3 force)
 		{
 				StopCoroutine ("KnockbackRoutine");
@@ -575,6 +594,7 @@ public class Player : MonoBehaviour
 		last_attacker = attacker;
 		StopCoroutine ("KnockbackRoutine");
 		StartCoroutine ("KnockbackRoutine", force + knockbackDir);
+		StartCoroutine(Vibrate(1,.1f));
 	}
 
 
@@ -589,6 +609,43 @@ public class Player : MonoBehaviour
 				knockbackDir = Vector3.zero;
 		last_attacker = null;
 		}
+
+	public IEnumerator Panic(Hazard hazard){
+		state = PlayerState.PANIC;
+		GameObject exclamation = GameObject.Instantiate((GameObject)Resources.Load("exclamation"), this.transform.position + Vector3.up, Quaternion.identity) as GameObject;
+
+		canMove = false;
+		spriteAnim.SetBool("walking", false);
+		spriteAnim.SetTrigger("panic");
+
+		bool tripping;
+		float taps = 0;
+
+		int recoveryRequirement = 10;
+
+		float recoveryWindow = 3;
+		float t = recoveryWindow;
+		while(t>0){
+			t-=Time.deltaTime;
+
+			if (taps>=recoveryRequirement){
+
+				break;
+			}
+			yield return null;
+		}
+
+		//Did not escape from the hazard
+		if (taps <= recoveryRequirement){
+			hazard.Effect(this);
+		}
+
+		spriteAnim.SetBool("walking", true);
+		canMove = true;
+		state = PlayerState.WALK;
+		GameObject.Destroy(exclamation);
+
+	}
 
 
 
