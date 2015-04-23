@@ -104,7 +104,7 @@ public class BombBall : Ball {
 		foreach (Collider2D col in players) {
 			Player p = col.GetComponent<Player>();
 			if (p != null && !col.isTrigger){
-				p.ApplyKnockback((p.transform.position - this.transform.position).normalized* explodeRadius * knockbackForce);
+				p.ApplyKnockback((p.transform.position - this.transform.position).normalized* explodeRadius * knockbackForce, this.owner);
 			}
 			Debug.Log(p.name);
 		}

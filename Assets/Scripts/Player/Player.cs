@@ -22,6 +22,7 @@ public class Player : MonoBehaviour
 		public static bool ballControlRightStick;
 		public static bool leftStickAim;
 		public static float respawnDelay = 5;
+	public bool keyboardControls = false;
 
 		//settings
 		public int playerNum;
@@ -59,7 +60,15 @@ public class Player : MonoBehaviour
 		Vector3 knockbackDir = Vector3.zero;
 		Vector3 dashDir = Vector3.zero;
 		bool fireHeld = false;
+	bool slapHeld = false;
 		bool dashing = false;
+
+		//for point tracking
+	public int points;
+	Player last_attacker;
+	int knockbacks_in_effect = 0;
+	public Rect scoreRect;
+
 
 
 
@@ -77,18 +86,22 @@ public class Player : MonoBehaviour
 				switch (playerNum) {
 				case 1:
 						gamepadNum = PlayerIndex.One;
+			scoreRect = new Rect(0,0,100,100);
 						Debug.Log ("Player 1 Registered");
 						break;
 				case 2:
 						gamepadNum = PlayerIndex.Two;
+			scoreRect = new Rect(Screen.width-100,0,100,100);
 						Debug.Log ("Player 2 Registered");
 						break;
 				case 3:
 						gamepadNum = PlayerIndex.Three;
+			scoreRect = new Rect(0,Screen.height-100,100,100);
 						Debug.Log ("Player 3 Registered");
 						break;
 				case 4:
 						gamepadNum = PlayerIndex.Four;
+			scoreRect = new Rect(Screen.width-100,Screen.height-100,100,100);
 						Debug.Log ("Player 4 Registered");
 						break;
 				default :
@@ -111,8 +124,9 @@ public class Player : MonoBehaviour
 				spriteAnim = sprite.GetComponent<Animator> ();
 		
 				SetColor (color);
-		
+
 				GameManager.Instance.AddPlayer (this);
+		GUIManager.Instance.UpdateScore (playerNum, points);
 		
 		}
 	
@@ -126,7 +140,7 @@ public class Player : MonoBehaviour
 						Aim ();
 				}
 
-				if (playerNum == 0) {
+				if (keyboardControls) {
 						if (Input.GetButtonDown ("Fire1")) {
 								weaponManager.Fire ();
 						}
@@ -142,6 +156,9 @@ public class Player : MonoBehaviour
 										StartCoroutine (Dash ());
 								}
 						}
+			if (Input.GetButtonDown ("Fire4")) {
+				weaponManager.Slap();
+			}
 				} else {
 						if (((!useTriggers && gamepad.Buttons.A == ButtonState.Pressed) ||
 								(useTriggers && gamepad.Triggers.Right > 0)) && !fireHeld) {
@@ -168,6 +185,13 @@ public class Player : MonoBehaviour
 										//Debug.Log(dashing);
 								}
 						}
+			if (gamepad.Buttons.RightShoulder == ButtonState.Pressed) {
+				if (!slapHeld){
+				weaponManager.Slap();
+				slapHeld = true;
+				}
+			}
+			else slapHeld = false;
 
 						
 				}
@@ -203,7 +227,7 @@ public class Player : MonoBehaviour
 
 		public void SetVibration (float vib)
 		{
-				if (playerNum > 0) {
+				if (!keyboardControls) {
 						GamePad.SetVibration (gamepadNum, vib, vib);
 				}
 		}
@@ -213,6 +237,7 @@ public class Player : MonoBehaviour
 				spriteRenderer.color = c;
 				visual.GetComponent<Renderer> ().material.color = c;
 				GetComponent<ParticleSystem> ().startColor = c;
+				GUIManager.Instance.SetColor (playerNum, c);
 		}
 
 
@@ -220,7 +245,7 @@ public class Player : MonoBehaviour
 		{
 				float leftX, leftY, rightX, rightY;
 				//for debugging without a controller
-				if (playerNum == 0) {
+				if (keyboardControls) {
 						leftX = Input.GetAxis ("Horizontal");
 						leftY = Input.GetAxis ("Vertical");
 						rightX = Input.GetAxis ("Horizontal");
@@ -326,6 +351,17 @@ public class Player : MonoBehaviour
 				DisplayHealth ();
 		}
 
+		public void AddPoints(int p){
+		points += p;
+		GUIManager.Instance.UpdateScore (playerNum, points);
+		}
+
+	public void RemovePoints(int p){
+		points -= p;
+		GUIManager.Instance.UpdateScore (playerNum, points);
+
+	}
+
 		public void Kill ()
 		{
 				GetComponent<ParticleSystem> ().Emit (10);
@@ -383,13 +419,7 @@ public class Player : MonoBehaviour
 				float dashSpeed = speed * 5;
 				float decayRate = 1;
 				while (dashSpeed>.1f) {
-						/*
-						if ((playerNum == 0 && (Input.GetButtonUp ("Fire3"))) || 
-								(playerNum > 0 && gamepad.Buttons.LeftShoulder == ButtonState.Released)) {
-								Debug.Log ("end dash");				
-								//break;
-						}
-						*/
+						
 						dashSpeed = Mathf.Lerp (dashSpeed, 0, .1f);
 						dashDir = dashDir.normalized * dashSpeed;
 //						Debug.Log (dashDir);
@@ -398,7 +428,6 @@ public class Player : MonoBehaviour
 
 				}
 				yield return new WaitForSeconds (1);
-				//canMove = true;
 				dashDir = Vector3.zero;
 				dashing = false;
 
@@ -492,6 +521,12 @@ public class Player : MonoBehaviour
 
 				//DROP BARRIER
 				//DROP WEAPONS
+				if (last_attacker != null) {
+						last_attacker.AddPoints (2);
+			last_attacker = null;
+				}
+			this.RemovePoints(1);
+		
 		}
 
 
@@ -535,6 +570,12 @@ public class Player : MonoBehaviour
 				StopCoroutine ("KnockbackRoutine");
 				StartCoroutine ("KnockbackRoutine", force + knockbackDir);
 		}
+	public void ApplyKnockback (Vector3 force, Player attacker)
+	{
+		last_attacker = attacker;
+		StopCoroutine ("KnockbackRoutine");
+		StartCoroutine ("KnockbackRoutine", force + knockbackDir);
+	}
 
 
 		protected  IEnumerator KnockbackRoutine (Vector3 force)
@@ -546,6 +587,13 @@ public class Player : MonoBehaviour
 						yield return null;
 				}
 				knockbackDir = Vector3.zero;
+		last_attacker = null;
 		}
+
+
+
+
+
+
 	
 }

@@ -60,7 +60,7 @@ public class Ball : Weapon
 				
 						} else if (other_player.team != owner.team) {
 								other_player.DecrementHealth ();
-								other_player.ApplyKnockback (moveDirection.magnitude * -normal * knockbackForce);
+								other_player.ApplyKnockback (moveDirection.magnitude * -normal * knockbackForce, this.owner);
 								Camera.main.GetComponent<AudioSource>().PlayOneShot (player_hit);
 						}
 						Deflect (normal);

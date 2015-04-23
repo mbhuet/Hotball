@@ -65,40 +65,56 @@ public class Shotgun : Weapon {
 	{
 		//		Debug.Log ("setcolor");
 		GetComponent<Renderer>().material.color = color;
-		transform.FindChild("particles").GetComponent<ParticleSystem> ();
+		transform.FindChild("particles").GetComponent<ParticleSystem> ().startColor = color;
 		sprite.color = color;
 
 	}
 
 	protected void Activate(Vector3 direction){
 		Camera.main.GetComponent<AudioSource> ().PlayOneShot (shotSound);
-		List<Collider2D> hitPlayers = ConeCast (owner.transform.right, shotAngle, shotDistance);
-		foreach(Collider2D col in hitPlayers){
-			Player player = col.GetComponent<Player>();
-			if (player!= null){
-				player.ApplyKnockback((player.transform.position - this.transform.position).normalized * knockbackForce);
-			}
-		}
-		owner.ApplyKnockback (-owner.transform.right * knockbackForce);
+
+		owner.ApplyKnockback (-owner.transform.right * userKnockback);
 		particleSystem.Play ();
+		StartCoroutine (Shots ());
 		StartCoroutine (Die ());
 	}
 
-	List<Collider2D> ConeCast(Vector3 direction, float angle, float dist){
+	List<Collider2D> ConeCast(Vector3 origin, Vector3 direction, float angle, float dist){
 		List<Collider2D> colliders = new List<Collider2D> ();
 		int numCasts = 10;
 		LayerMask mask = LayerMask.GetMask ("Player");
 		for (int i = 0; i<numCasts; i++) {
 			Vector3 rotatedDir = Quaternion.AngleAxis(-angle/2f + (angle/(numCasts-1)) * i, Vector3.forward) * direction;
-			Debug.DrawRay(this.transform.position, rotatedDir * dist, Color.yellow, 1);
-			RaycastHit2D[] hits = Physics2D.RaycastAll(this.transform.position, rotatedDir, dist, mask);
+			Debug.DrawRay(origin, rotatedDir * dist, Color.yellow, .01f);
+			RaycastHit2D[] hits = Physics2D.RaycastAll(origin, rotatedDir, dist, mask);
 			foreach(RaycastHit2D hit in hits){
-				if (!colliders.Contains(hit.collider) && hit.collider.gameObject != this.gameObject){
+				if (!colliders.Contains(hit.collider) && hit.collider.gameObject != this.owner.gameObject){
 					colliders.Add(hit.collider);
 				}
 			}
 		}
 		return colliders;
+	}
+
+	IEnumerator Shots(){
+		Vector3 origin = this.transform.position;
+		Vector3 dir = owner.transform.right;
+		List<Collider2D> alreadyHit = new List<Collider2D> ();
+		float t = 0;
+		while (t<particleSystem.startLifetime) {
+			t+= Time.deltaTime;
+			List<Collider2D> hits = ConeCast (origin, dir, shotAngle, t * particleSystem.startSpeed * .5f);
+			foreach(Collider2D hit in hits){
+				if (!alreadyHit.Contains(hit)){
+					alreadyHit.Add(hit);
+					Player player = hit.GetComponent<Player>();
+					if (player!= null){
+						player.ApplyKnockback((player.transform.position - origin).normalized * knockbackForce, this.owner);
+					}
+				}
+			}
+			yield return null;
+		}
 	}
 
 

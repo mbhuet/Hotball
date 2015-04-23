@@ -17,7 +17,7 @@ public class GameManager : MonoBehaviour {
 
 	public GameObject ballPickupPrefab;
 	public GameObject barrierPickupPrefab;
-	List<Player> players;
+	public List<Player> players;
 
 	public int startingHealth = 3;
 

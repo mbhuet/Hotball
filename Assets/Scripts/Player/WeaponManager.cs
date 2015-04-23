@@ -11,11 +11,13 @@ public class WeaponManager : MonoBehaviour
 	public AudioClip pickupSound;
 	public AudioClip fireSound;
 
+	Weapon slap;
+
 		public Weapon[] startingWeapons;
 		List<Weapon> heldWeaponList;
 		List<Weapon> activeWeaponsList;
 	Weapon activeWeapon;
-		static int maxWeapons = 3;
+		static int maxWeapons = 2;
 		List<Barrier> placedBarrierList;
 		List<Barrier> heldBarrierList;
 		static int maxBarriers = 1;
@@ -30,7 +32,15 @@ public class WeaponManager : MonoBehaviour
 				heldBarrierList = new List<Barrier> ();
 
 				LoadStartingWeapons ();
+				slap = transform.Find ("Swipe").GetComponent<Slap>();
+		slap.SetOwner (player);
+		//Debug.Log (player);
+		//Debug.Log (slap);
 		}
+
+	public void Slap(){
+		slap.ButtonDown ();
+	}
 
 		public void Fire ()
 		{
@@ -84,7 +94,7 @@ public class WeaponManager : MonoBehaviour
 				if (heldWeaponList.Count < maxWeapons) {
 			Camera.main.GetComponent<AudioSource>().PlayOneShot(pickupSound);
 						w.SetOwner (player);
-						heldWeaponList.Add (w);
+						heldWeaponList.Insert (0, w);
 						ArrangeWeapons ();
 						IgnoreWeaponBarrierCollision (w);
 						if (hidden)
@@ -148,9 +158,12 @@ public class WeaponManager : MonoBehaviour
 		public void Die ()
 		{
 				hidden = true;
-				foreach (Weapon w in heldWeaponList) {
-						w.Hide ();		
-				}
+		while (heldWeaponList.Count > 0) {
+
+			Weapon toDestroy = heldWeaponList [0];
+			heldWeaponList.Remove(toDestroy);
+			GameObject.Destroy(toDestroy.gameObject);
+		}
 				while (activeWeaponsList.Count > 0) {
 						Debug.Log (activeWeaponsList.Count);
 						Weapon toDestroy = activeWeaponsList [0];
