@@ -17,7 +17,7 @@ public class WeaponManager : MonoBehaviour
 		List<Weapon> heldWeaponList;
 		List<Weapon> activeWeaponsList;
 	Weapon activeWeapon;
-		static int maxWeapons = 2;
+		public int maxWeapons = 1;
 		List<Barrier> placedBarrierList;
 		List<Barrier> heldBarrierList;
 		static int maxBarriers = 1;

@@ -117,7 +117,7 @@ public class BombBall : Ball {
 		owner.weaponManager.RemoveActiveWeapon (this);
 		state = WeaponState.IDLE;
 		moveDirection = Vector3.zero;
-		GetComponent<ParticleSystem>().Emit (20);
+		GetComponent<ParticleSystem>().Emit (150);
 		Hide ();
 		
 		yield return new WaitForSeconds (trail.time);
