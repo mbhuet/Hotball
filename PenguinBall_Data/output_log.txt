@@ -1,0 +1,69 @@
+Initialize engine version: 5.3.4f1 (fdbb5133b820)
+GfxDevice: creating device client; threaded=1
+Direct3D:
+    Version:  Direct3D 11.0 [level 11.0]
+    Renderer: AMD Radeon R9 200 / HD 7900 Series (ID=0x6798)
+    Vendor:   ATI
+    VRAM:     3054 MB
+Begin MonoManager ReloadAssembly
+Platform assembly: E:\Unity Projects\PenguinBall\PenguinBall_Data\Managed\UnityEngine.dll (this message is harmless)
+Loading E:\Unity Projects\PenguinBall\PenguinBall_Data\Managed\UnityEngine.dll into Unity Child Domain
+Platform assembly: E:\Unity Projects\PenguinBall\PenguinBall_Data\Managed\Assembly-CSharp.dll (this message is harmless)
+Loading E:\Unity Projects\PenguinBall\PenguinBall_Data\Managed\Assembly-CSharp.dll into Unity Child Domain
+Platform assembly: E:\Unity Projects\PenguinBall\PenguinBall_Data\Managed\UnityEngine.UI.dll (this message is harmless)
+Loading E:\Unity Projects\PenguinBall\PenguinBall_Data\Managed\UnityEngine.UI.dll into Unity Child Domain
+Platform assembly: E:\Unity Projects\PenguinBall\PenguinBall_Data\Managed\UnityEngine.Networking.dll (this message is harmless)
+Loading E:\Unity Projects\PenguinBall\PenguinBall_Data\Managed\UnityEngine.Networking.dll into Unity Child Domain
+Platform assembly: E:\Unity Projects\PenguinBall\PenguinBall_Data\Managed\XInputDotNetPure.dll (this message is harmless)
+Loading E:\Unity Projects\PenguinBall\PenguinBall_Data\Managed\XInputDotNetPure.dll into Unity Child Domain
+Platform assembly: E:\Unity Projects\PenguinBall\PenguinBall_Data\Managed\XInputDotNetPure.dll (this message is harmless)
+Loading E:\Unity Projects\PenguinBall\PenguinBall_Data\Managed\XInputDotNetPure.dll into Unity Child Domain
+- Completed reload, in  0.108 seconds
+Platform assembly: E:\Unity Projects\PenguinBall\PenguinBall_Data\Managed\System.Core.dll (this message is harmless)
+Platform assembly: E:\Unity Projects\PenguinBall\PenguinBall_Data\Managed\System.dll (this message is harmless)
+desktop: 1920x1080 60Hz; virtual: 1920x1080 at 0,0
+<RI> Initializing input.
+<RI> Input initialized.
+<RI> Initialized touch support.
+UnloadTime: 34.240414 ms
+Player 2 Registered
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 37)
+
+Player 1 Registered
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 37)
+
+Player 3 Registered
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 37)
+
+Player 4 Registered
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 37)
+
+Unloading 4 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 8.177797 ms
+
+Unloading 10 unused Assets to reduce memory usage. Loaded Objects now: 830.
+Total: 0.301928 ms (FindLiveObjects: 0.046180 ms CreateObjectMapping: 0.037704 ms MarkObjects: 0.206644 ms  DeleteObjects: 0.008476 ms)
+
+Player 2 Registered
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 37)
+
+Player 1 Registered
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 37)
+
+Player 3 Registered
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 37)
+
+Player 4 Registered
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 37)
+
+Setting up 2 worker threads for Enlighten.
+  Thread -> id: 39c -> priority: 1 
+  Thread -> id: 33dc -> priority: 1 
