@@ -16,5 +16,9 @@ public class Pitfall : Hazard {
 		player.Kill ();
 	}
 
+	public override void OnTouch (Player player){
+		player.StartCoroutine(player.Panic(this));
+	}
+
 
 }

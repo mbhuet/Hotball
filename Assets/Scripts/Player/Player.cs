@@ -15,6 +15,13 @@ public enum Team
 		EIGHT}
 ;
 
+public enum PlayerState
+{
+		WALK,
+		DEAD,
+		PANIC}
+;
+
 public class Player : MonoBehaviour
 {
 		public static bool rightStickAim;
@@ -22,7 +29,7 @@ public class Player : MonoBehaviour
 		public static bool ballControlRightStick;
 		public static bool leftStickAim;
 		public static float respawnDelay = 5;
-	public bool keyboardControls = false;
+		public bool keyboardControls = false;
 
 		//settings
 		public int playerNum;
@@ -51,6 +58,8 @@ public class Player : MonoBehaviour
 		GameObject sprite;
 		SpriteRenderer spriteRenderer;
 		Animator spriteAnim;
+		Vector3 lastSafePosition;
+	public Vector3 movementVector = Vector3.zero; //this is a combination of all forces affecting position
 
 		//controls
 		protected PlayerIndex gamepadNum;
@@ -60,15 +69,19 @@ public class Player : MonoBehaviour
 		Vector3 knockbackDir = Vector3.zero;
 		Vector3 dashDir = Vector3.zero;
 		bool fireHeld = false;
-	bool slapHeld = false;
+		bool slapHeld = false;
 		bool dashing = false;
+<<<<<<< HEAD
+		PlayerState state = PlayerState.WALK;
+=======
     private TrailRenderer dashTrail;
+>>>>>>> master
 
 		//for point tracking
-	public int points;
-	Player last_attacker;
-	int knockbacks_in_effect = 0;
-	public Rect scoreRect;
+		public int points;
+		Player last_attacker;
+		int knockbacks_in_effect = 0;
+		public Rect scoreRect;
 
 
 
@@ -87,22 +100,22 @@ public class Player : MonoBehaviour
 				switch (playerNum) {
 				case 1:
 						gamepadNum = PlayerIndex.One;
-			scoreRect = new Rect(0,0,100,100);
+						scoreRect = new Rect (0, 0, 100, 100);
 						Debug.Log ("Player 1 Registered");
 						break;
 				case 2:
 						gamepadNum = PlayerIndex.Two;
-			scoreRect = new Rect(Screen.width-100,0,100,100);
+						scoreRect = new Rect (Screen.width - 100, 0, 100, 100);
 						Debug.Log ("Player 2 Registered");
 						break;
 				case 3:
 						gamepadNum = PlayerIndex.Three;
-			scoreRect = new Rect(0,Screen.height-100,100,100);
+						scoreRect = new Rect (0, Screen.height - 100, 100, 100);
 						Debug.Log ("Player 3 Registered");
 						break;
 				case 4:
 						gamepadNum = PlayerIndex.Four;
-			scoreRect = new Rect(Screen.width-100,Screen.height-100,100,100);
+						scoreRect = new Rect (Screen.width - 100, Screen.height - 100, 100, 100);
 						Debug.Log ("Player 4 Registered");
 						break;
 				default :
@@ -130,7 +143,7 @@ public class Player : MonoBehaviour
 				SetColor (color);
 
 				GameManager.Instance.AddPlayer (this);
-		GUIManager.Instance.UpdateScore (playerNum, points);
+				GUIManager.Instance.UpdateScore (playerNum, points);
 		
 		}
 	
@@ -156,13 +169,13 @@ public class Player : MonoBehaviour
 								//StartCoroutine ("DefenseCooldown");
 						}
 						if (Input.GetButtonDown ("Fire3")) {
-								if (!dashing && leftStick.magnitude > 0) {
+								if (!dashing && leftStick.magnitude > 0 && canMove) {
 										StartCoroutine (Dash ());
 								}
 						}
-			if (Input.GetButtonDown ("Fire4")) {
-				weaponManager.Slap();
-			}
+						if (Input.GetButtonDown ("Fire4")) {
+								weaponManager.Slap ();
+						}
 				} else {
 						if (((!useTriggers && gamepad.Buttons.A == ButtonState.Pressed) ||
 								(useTriggers && gamepad.Triggers.Right > 0)) && !fireHeld) {
@@ -183,25 +196,26 @@ public class Player : MonoBehaviour
 
 						}
 						if (gamepad.Buttons.LeftShoulder == ButtonState.Pressed) {
-								if (!dashing && leftStick.magnitude > 0) {
+								if (!dashing && leftStick.magnitude > 0 && canMove) {
 										//Debug.Log(dashing);
 										StartCoroutine (Dash ());
 										//Debug.Log(dashing);
 								}
 						}
-			if (gamepad.Buttons.RightShoulder == ButtonState.Pressed) {
-				if (!slapHeld){
-				weaponManager.Slap();
-				slapHeld = true;
-				}
-			}
-			else slapHeld = false;
+						if (gamepad.Buttons.RightShoulder == ButtonState.Pressed) {
+								if (!slapHeld) {
+										weaponManager.Slap ();
+										slapHeld = true;
+								}
+						} else
+								slapHeld = false;
 
 						
 				}
 
 				sprite.transform.rotation = Quaternion.identity;
-		CheckGround ();
+				if (state == PlayerState.WALK)
+						CheckGround ();
 		}
 
 		void FixedUpdate ()
@@ -209,31 +223,43 @@ public class Player : MonoBehaviour
 				Move ();
 		}
 
-		void CheckGround(){
-		LayerMask mask = LayerMask.GetMask("Ground", "Hazard");
-		Collider2D under = Physics2D.OverlapPoint (this.transform.position, mask);
-		if (under != null) {
+		void CheckGround ()
+		{
+				LayerMask mask = LayerMask.GetMask ("Ground", "Hazard");
+				Collider2D under = Physics2D.OverlapPoint (this.transform.position, mask);
+				if (under != null) {
 						if (under.gameObject.GetComponent<Hazard> () != null) {
-								Debug.Log (under.name);
+//								Debug.Log (under.name);
 
 								Hazard haz = under.gameObject.GetComponent<Hazard> ();
-								haz.Effect (this);
+								haz.OnTouch (this);
+						} else if (under.gameObject.layer == LayerMask.NameToLayer ("Ground")) {
+								this.transform.parent = under.transform;
+								lastSafePosition = this.transform.localPosition;
+								Vector3 groundScale = under.transform.localScale;
+								//this.transform.localScale = new Vector3(1f/groundScale.y, 1f/groundScale.x, 1f/groundScale.z);
 						}
-			else if (under.gameObject.layer == LayerMask.NameToLayer("Ground")) {
-				this.transform.parent = under.transform;
-				Vector3 groundScale = under.transform.localScale;
-				//this.transform.localScale = new Vector3(1f/groundScale.y, 1f/groundScale.x, 1f/groundScale.z);
-			}
 				}
 
-	}
-
+		}
 
 		public void SetVibration (float vib)
 		{
 				if (!keyboardControls) {
 						GamePad.SetVibration (gamepadNum, vib, vib);
 				}
+		}
+
+		IEnumerator Vibrate (float intensity, float duration)
+		{
+				SetVibration (intensity);
+				float t = 0;
+				while (t<duration) {
+						t += Time.deltaTime;
+						yield return null;
+				}
+				SetVibration (0);
+
 		}
 
 		void SetColor (Color c)
@@ -243,7 +269,6 @@ public class Player : MonoBehaviour
 				GetComponent<ParticleSystem> ().startColor = c;
 				GUIManager.Instance.SetColor (playerNum, c);
 		}
-
 
 		void UpdateSticks ()
 		{
@@ -263,7 +288,6 @@ public class Player : MonoBehaviour
 				leftStick = new Vector3 (leftX, leftY, 0);
 				rightStick = new Vector3 (rightX, rightY, 0);
 		}
-
 
 		void Aim ()
 		{
@@ -299,7 +323,6 @@ public class Player : MonoBehaviour
 						spriteAnim.SetFloat ("rotation", sp_angle);
 				}
 		}
-		
 
 		void Catch ()
 		{
@@ -316,9 +339,10 @@ public class Player : MonoBehaviour
 
 		void Move ()
 		{
+		movementVector = ((canMove ? leftStick : Vector3.zero) * Time.fixedDeltaTime * speed +
+			(knockbackDir + dashDir) * Time.fixedDeltaTime);
 				this.GetComponent<Rigidbody2D> ().MovePosition (this.transform.position + 
-						(canMove ? leftStick : Vector3.zero) * Time.fixedDeltaTime * speed +
-						(knockbackDir + dashDir) * Time.fixedDeltaTime);
+						movementVector);
 
 
 				//Debug.Log (dashDir);
@@ -355,16 +379,18 @@ public class Player : MonoBehaviour
 				DisplayHealth ();
 		}
 
-		public void AddPoints(int p){
-		points += p;
-		GUIManager.Instance.UpdateScore (playerNum, points);
+		public void AddPoints (int p)
+		{
+				points += p;
+				GUIManager.Instance.UpdateScore (playerNum, points);
 		}
 
-	public void RemovePoints(int p){
-		points -= p;
-		GUIManager.Instance.UpdateScore (playerNum, points);
+		public void RemovePoints (int p)
+		{
+				points -= p;
+				GUIManager.Instance.UpdateScore (playerNum, points);
 
-	}
+		}
 
 		public void Kill ()
 		{
@@ -402,7 +428,6 @@ public class Player : MonoBehaviour
 				}
 		}
 
-
 		public void RecoverHealth ()
 		{
 				if (health < 3) {
@@ -411,14 +436,13 @@ public class Player : MonoBehaviour
 				DisplayHealth ();
 		}
 
-
 		IEnumerator Dash ()
 		{
         dashTrail.Clear();
         dashTrail.enabled = true;
 				Camera.main.GetComponent<AudioSource> ().PlayOneShot (dashSound);
 
-				Debug.Log ("dash");
+//				Debug.Log ("dash");
 				dashing = true;
 				//canMove = false;
 				dashDir = leftStick;
@@ -439,7 +463,6 @@ public class Player : MonoBehaviour
 				dashDir = Vector3.zero;
 				dashing = false;
 		}
-
 
 		IEnumerator ActivateDefense ()
 		{
@@ -495,7 +518,6 @@ public class Player : MonoBehaviour
 				StartCoroutine (DefenseCooldown ());
 		}
 
-
 		IEnumerator DefenseCooldown ()
 		{
 				defenseAvailable = false;
@@ -510,7 +532,6 @@ public class Player : MonoBehaviour
 				
 				defenseAvailable = true;
 		}
-
 
 		void Die ()
 		{
@@ -529,13 +550,19 @@ public class Player : MonoBehaviour
 				//DROP BARRIER
 				//DROP WEAPONS
 				if (last_attacker != null) {
+<<<<<<< HEAD
+						last_attacker.AddPoints (2);
+						last_attacker = null;
+				}
+				this.RemovePoints (1);
+=======
 						last_attacker.AddPoints (1);
 			last_attacker = null;
 				}
 			this.RemovePoints(0);
+>>>>>>> master
 		
 		}
-
 
 		void Spawn ()
 		{
@@ -554,7 +581,6 @@ public class Player : MonoBehaviour
 
 		}
 
-
 		IEnumerator Respawn (float delay)
 		{
 				Die ();
@@ -571,19 +597,19 @@ public class Player : MonoBehaviour
 				this.enabled = true;
 		}
 
-
 		public void ApplyKnockback (Vector3 force)
 		{
 				StopCoroutine ("KnockbackRoutine");
 				StartCoroutine ("KnockbackRoutine", force + knockbackDir);
 		}
-	public void ApplyKnockback (Vector3 force, Player attacker)
-	{
-		last_attacker = attacker;
-		StopCoroutine ("KnockbackRoutine");
-		StartCoroutine ("KnockbackRoutine", force + knockbackDir);
-	}
 
+		public void ApplyKnockback (Vector3 force, Player attacker)
+		{
+				last_attacker = attacker;
+				StopCoroutine ("KnockbackRoutine");
+				StartCoroutine ("KnockbackRoutine", force + knockbackDir);
+				StartCoroutine (Vibrate (1, .1f));
+		}
 
 		protected  IEnumerator KnockbackRoutine (Vector3 force)
 		{
@@ -594,7 +620,63 @@ public class Player : MonoBehaviour
 						yield return null;
 				}
 				knockbackDir = Vector3.zero;
-		last_attacker = null;
+				last_attacker = null;
+		}
+
+		public IEnumerator Panic (Hazard hazard)
+		{
+		SetVibration (1);
+		knockbackDir = Vector3.zero;
+		dashDir = Vector3.zero;
+
+				state = PlayerState.PANIC;
+				GameObject exclamation = GameObject.Instantiate ((GameObject)Resources.Load ("exclamation"), this.transform.position + Vector3.up, Quaternion.identity) as GameObject;
+
+				canMove = false;
+				spriteAnim.SetBool ("walking", false);
+				spriteAnim.SetTrigger ("panic");
+
+				bool tripping;
+				float taps = 0;
+
+				int recoveryRequirement = 8;
+				bool tapHeld = false;
+
+				float recoveryWindow = 3;
+				float t = recoveryWindow;
+				while (t>0) {
+						t -= Time.deltaTime;
+
+						if ((keyboardControls && !Input.GetKey (KeyCode.A)) || (!keyboardControls && gamepad.Buttons.A == ButtonState.Released)){
+				//Debug.Log("here");
+								tapHeld = false;
+				}
+						else if (!tapHeld) {
+								tapHeld = true;
+								taps++;
+								Debug.Log (taps);
+						}
+
+						if (taps >= recoveryRequirement) {
+
+								break;
+						}
+			if (knockbackDir.magnitude > 0) break;
+						yield return null;
+				}
+
+				//Did not escape from the hazard
+				if (taps < recoveryRequirement) {
+						hazard.Effect (this);
+				} else {
+						this.transform.localPosition = lastSafePosition;		
+				}
+		SetVibration (0);
+				spriteAnim.SetBool ("walking", true);
+				canMove = true;
+				state = PlayerState.WALK;
+				GameObject.Destroy (exclamation);
+
 		}
 
 
