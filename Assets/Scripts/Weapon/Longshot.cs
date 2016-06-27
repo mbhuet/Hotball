@@ -118,7 +118,7 @@ public class Longshot : Weapon
 			return;		
 		}
 				LayerMask mask = LayerMask.GetMask ("Player", "Wall");
-				RaycastHit2D hit = Physics2D.CircleCast (this.transform.position, 1.5f, moveDirection, speed * Time.deltaTime, mask);
+        RaycastHit2D hit = Physics2D.CircleCast (this.transform.position, 1.25f, moveDirection, speed * Time.deltaTime, mask);
 				Debug.DrawRay (this.transform.position, moveDirection.normalized * speed * Time.deltaTime, Color.yellow, 1);
 				
 				if (hit.collider != null && hit.collider.gameObject != owner.gameObject && !hit.collider.isTrigger) {

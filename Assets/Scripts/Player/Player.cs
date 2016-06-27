@@ -71,7 +71,11 @@ public class Player : MonoBehaviour
 		bool fireHeld = false;
 		bool slapHeld = false;
 		bool dashing = false;
+<<<<<<< HEAD
 		PlayerState state = PlayerState.WALK;
+=======
+    private TrailRenderer dashTrail;
+>>>>>>> master
 
 		//for point tracking
 		public int points;
@@ -132,7 +136,10 @@ public class Player : MonoBehaviour
 				sprite = transform.FindChild ("sprite").gameObject;
 				spriteRenderer = sprite.GetComponent<SpriteRenderer> ();
 				spriteAnim = sprite.GetComponent<Animator> ();
-		
+
+        dashTrail = transform.FindChild("DashTrail").GetComponent<TrailRenderer>();
+        dashTrail.enabled = false;
+
 				SetColor (color);
 
 				GameManager.Instance.AddPlayer (this);
@@ -431,6 +438,8 @@ public class Player : MonoBehaviour
 
 		IEnumerator Dash ()
 		{
+        dashTrail.Clear();
+        dashTrail.enabled = true;
 				Camera.main.GetComponent<AudioSource> ().PlayOneShot (dashSound);
 
 //				Debug.Log ("dash");
@@ -448,10 +457,11 @@ public class Player : MonoBehaviour
 						yield return null;
 
 				}
-				yield return new WaitForSeconds (1);
+        dashTrail.enabled = false;
+
+        yield return new WaitForSeconds (1);
 				dashDir = Vector3.zero;
 				dashing = false;
-
 		}
 
 		IEnumerator ActivateDefense ()
@@ -540,10 +550,17 @@ public class Player : MonoBehaviour
 				//DROP BARRIER
 				//DROP WEAPONS
 				if (last_attacker != null) {
+<<<<<<< HEAD
 						last_attacker.AddPoints (2);
 						last_attacker = null;
 				}
 				this.RemovePoints (1);
+=======
+						last_attacker.AddPoints (1);
+			last_attacker = null;
+				}
+			this.RemovePoints(0);
+>>>>>>> master
 		
 		}
 
