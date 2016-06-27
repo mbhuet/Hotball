@@ -71,11 +71,8 @@ public class Player : MonoBehaviour
 		bool fireHeld = false;
 		bool slapHeld = false;
 		bool dashing = false;
-<<<<<<< HEAD
 		PlayerState state = PlayerState.WALK;
-=======
     private TrailRenderer dashTrail;
->>>>>>> master
 
 		//for point tracking
 		public int points;
@@ -550,18 +547,12 @@ public class Player : MonoBehaviour
 				//DROP BARRIER
 				//DROP WEAPONS
 				if (last_attacker != null) {
-<<<<<<< HEAD
-						last_attacker.AddPoints (2);
-						last_attacker = null;
-				}
-				this.RemovePoints (1);
-=======
+
 						last_attacker.AddPoints (1);
 			last_attacker = null;
 				}
 			this.RemovePoints(0);
->>>>>>> master
-		
+
 		}
 
 		void Spawn ()
